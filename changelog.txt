@@ -14,6 +14,7 @@ CHANGELOG
 		  has pagination now.
 		- Added an enum value to Story for ratings called Rating, and some
 		  functions to return both the enum itself and strings based on it.
+		- Fixed Story's getFormattedTags() to have correct links to tag pages.
 	
 	2022 May 25
 		- Moved changelog and to-do list to a separate file.
@@ -24,7 +25,7 @@ CHANGELOG
 		  and added "authors" and "fandoms" subfolders to have all works under
 		  each author/fandom
 		- Changed the formatting of toSafeURL()'s output to ensure that tag pages
-		  have unique urls when paginated. Unsafe chars are now replaced with "_##"
+		  have unique urls when paginated. Unsafe chars are now replaced with "-##"
 		  (where ## = int value of the char), and the pagination is appended at
 		  the end as "_#" (# = pagenumber), so they can't accidentally overwrite
 		  one another.

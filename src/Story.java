@@ -475,7 +475,7 @@ public class Story {
 			for (int i = 0; i < storyTags.length; i++) {
 				// don't bother building valid links if no tag pages will be generated
 				if (!FicArchiveBuilder.skipTagPages()) { 
-					tagURL = FicArchiveBuilder.getSitePath() + "tags/" + FicArchiveBuilder.toSafeURL(storyTags[i].toLowerCase()) + ".html";
+					tagURL = FicArchiveBuilder.getSitePath() + "tags/" + FicArchiveBuilder.toSafeURL(storyTags[i].toLowerCase()) + "/1.html";
 				}
 				// Create the formatted tag and link
 				if (i == (storyTags.length - 1)) { // last tag has special class for CSS usage
