@@ -1,5 +1,20 @@
 CHANGELOG
 	
+	2022 May 26
+		- Fixed a bug where buildAlphabeticalIndexOf() wouldn't put the last entry
+		  of the index under its own heading. Also updated the links it generated
+		  for the new URL schema.
+		- Added a toTitleCase() function so tags can be displayed in title case
+		  on tag pages in titles.
+		- Added an overload for the buildCategoryPages() function to accept a
+		  string array, and tweaked its link handling slightly,so it can be 
+		  used to generate general sorted work indexes as well as category-specific
+		  ones.
+		- Changed "latest index" generation to use buildCategoryPages(), so it
+		  has pagination now.
+		- Added an enum value to Story for ratings called Rating, and some
+		  functions to return both the enum itself and strings based on it.
+	
 	2022 May 25
 		- Moved changelog and to-do list to a separate file.
 		- Now on version 0.2.5
@@ -13,6 +28,10 @@ CHANGELOG
 		  (where ## = int value of the char), and the pagination is appended at
 		  the end as "_#" (# = pagenumber), so they can't accidentally overwrite
 		  one another.
+		- Added a few chapters of Dante's Inferno to the input test folder.
+		- Set up Git, and moved to a new folder for the repository.
+		- Changed the URL schema and toSafeURL() again. Tags/Fandoms/etc now get
+		  folders with their names, and their pages are named 1.html, 2.html, etc.
 	
 	2022 May 24
 		- Better commenting on the numberWithCommas() method

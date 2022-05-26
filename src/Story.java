@@ -3,7 +3,9 @@ import java.io.*;
 import java.time.*;
 import java.time.format.*;
 
-// A class to represent an individual story, with a folder, chapters and metadata.
+/***
+A class to represent an individual story, with a folder, chapters and metadata.
+***/
 public class Story {
 	// The folder the story files will be written to
 	private File storyOutputFolder;
@@ -38,6 +40,8 @@ public class Story {
 	private int wordcount = -1; 
 	// Completion status. Defaults to false (incomplete).
 	private boolean isComplete = false;
+	// Rating (enum). Initialized to no rating in case none is given.
+	private Rating storyRating = Rating.UNRATED;
 	// In case no storyinfo.txt file is found
 	private boolean hasStoryDataFile = false;
 	// In case one or both dates in storyinfo.txt are missing, incorrectly formatted 
@@ -152,6 +156,25 @@ public class Story {
 									System.out.println("Error: wordcount for story in folder " + inputFolder.getName() + 
 									" was improperly formatted and could not be parsed. Wordcount will be counted automatically instead.");
 									wordcount = -1;
+								}
+							}
+							else if (currentLineData[0].equals("rating")) {
+								// Interpret the rating as a Rating enum value
+								String r = currentLineData[1].toLowerCase();
+								if (r.equals("g") || r.equals("k")) {
+									storyRating = Rating.G;
+								}
+								else if (r.equals("pg") || r.equals("k+")) {
+									storyRating = Rating.PG;
+								}
+								else if (r.equals("t") || r.equals("teen")) {
+									storyRating = Rating.TEEN;
+								}
+								else if (r.equals("m") || r.equals("ma") || r.equals("mature")) {
+									storyRating = Rating.MATURE;
+								}
+								else if (r.equals("e") || r.equals("x") || r.equals("explicit")) {
+									storyRating = Rating.EXPLICIT;
 								}
 							}
 							else if (currentLineData[0].equals("complete")) {
@@ -524,6 +547,32 @@ public class Story {
 		return published;
 	}
 	
+	// Gets the rating enum
+	public Rating getRating() {
+		return storyRating;
+	}
+	
+	// Gets a string for the rating
+	// (Note: modify this later to allow custom ratings?)
+	public String getRatingString() {
+		switch (storyRating) {
+			case UNRATED: 
+				return "No Rating";
+			case G:
+				return "G";
+			case PG:
+				return "PG";
+			case TEEN:
+				return "Teen";
+			case MATURE:
+				return "Mature";
+			case EXPLICIT:
+				return "Explicit";
+			default:
+				return "No Rating"; // just in case
+		}
+	}
+	
 	public String toString() {
 		if (storyTitle.equals("")) {
 			return storyOutputFolder.getName();
@@ -531,5 +580,3 @@ public class Story {
 		return storyTitle;
 	}
 }
-
-

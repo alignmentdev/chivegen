@@ -335,9 +335,10 @@ public class FicArchiveBuilder {
 					archiveTagMap = new HashMap<String, ArrayList<Story>>();
 					archiveAuthorMap = new HashMap<String, ArrayList<Story>>();
 					archiveFandomMap = new HashMap<String, ArrayList<Story>>();
-					// Build story objects for each folder, and create their output files
+					// Create initial story array and output folder
 					stories = new Story[storyFolders.length];
 					File storiesOutputFolder = new File(output, "stories");
+					// Build story objects for each folder, and create their output files
 					for (int i = 0; i < stories.length; i++) {
 						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
 						System.out.println("Building story " + stories[i].getStoryTitle() + "...");
@@ -357,15 +358,21 @@ public class FicArchiveBuilder {
 							System.out.println("Title index page created.");
 						}
 					}
+					// Create index of all works in reverse chronological
+					// order, unless this is skipped.
 					if (!skipLatestIndex) {
-						currentIndex = writeIntoTemplate(workIndexTemplate, 
-						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildIndexSortedBy(new SortByDateUpdated())), standardWorkIndexInsertionPoints));
-						// BUILD INDEX PAGE
-						buildPage(buildStandardPageString(currentIndex, buildPageTitle("Latest Stories")), new File(output, "by_latest.html"));
-						if (verbose) {
-							System.out.println("Latest index page created.");
+						File allByLatestFolder = new File(output, "latest");
+						if (!allByLatestFolder.exists()) {
+							allByLatestFolder.mkdirs();
+						}
+						Arrays.sort(stories, new SortByDateUpdated().getComparator());
+						// Create pages
+						String[] allByLatest = buildCategoryPages("", "latest", stories, "Stories");
+						for (int i = 0; i < allByLatest.length; i++) {
+							buildPage(buildStandardPageString(allByLatest[i], "Latest Stories (Page " + (i+1) + ")"), new File(allByLatestFolder, (i+1) + ".html"));
 						}
 					}
+					// Create fandom index if we have at least one fandom
 					if (!skipFandomIndex) {
 						// Generate fandom index page
 						currentIndex = writeIntoTemplate(workIndexTemplate, 
@@ -383,6 +390,7 @@ public class FicArchiveBuilder {
 						System.out.println("Generating fandom pages...");
 						buildArchiveCategory(archiveFandomMap, fandomFolder, "Fandoms", "Stories in ");
 					}
+					// Create authors index if we have at least one author
 					if (!skipAuthorIndex && archiveHasAuthors) {
 						// Generate index page
 						currentIndex = writeIntoTemplate(workIndexTemplate, 
@@ -400,6 +408,7 @@ public class FicArchiveBuilder {
 						System.out.println("Generating author pages...");
 						buildArchiveCategory(archiveAuthorMap, authorFolder, "Authors", "Stories by ");
 					}
+					// Create tag pages, if any tags are used.
 					if (!skipTagPages && archiveHasTags) {
 						System.out.println("Generating tag pages...");
 						// CREATE TAG FOLDER + PAGES
@@ -447,13 +456,6 @@ public class FicArchiveBuilder {
 							buildPage(styleSheetSource, new File(output, styleSheet.getName()));
 						}
 					}
-					
-					/***
-					System.out.println("For debug purposes, actually making normal files will be skipped in favor of a test file.");
-					HashMap<String, String> testPageMap = generateHashMapFromArrays(standardKeywords, new String[] {"title text", "here is some body", "footer hehe"});
-					String testPageContent = writeIntoTemplate(pageTemplate, reassociateIntegers(testPageMap, standardInsertionPoints));
-					buildPage(testPageContent, new File(output, "testpage.html"));
-					***/
 				}
 			} catch (FileNotFoundException e) {
 				if (!input.exists()) {
@@ -781,7 +783,7 @@ public class FicArchiveBuilder {
 			try {
 				outputFile.createNewFile();
 			} catch (IOException e) {
-				System.out.println("Error: something went wrong while building a page.");
+				System.out.println("Error: something went wrong while building a page in " + outputFile.getPath());
 				e.printStackTrace();
 			}
 		}
@@ -1025,8 +1027,33 @@ public class FicArchiveBuilder {
 		}
 	}
 	
+	// Takes a string and converts it to Title Case
+	public static String toTitleCase(String text) {
+		if (text.equals("")) {
+			return text;
+		}
+		StringBuilder titleBuilder = new StringBuilder();
+		boolean atStartOfWord = true;
+		char c = ' ';
+		for (int i = 0; i < text.length(); i++) {
+			c = text.charAt(i);
+			// Check that c is actually a letter! 64-91 is caps, 96-123 is lower
+			if (atStartOfWord && (c > 64 && c < 91) || (c > 96 && c < 123)) {
+				titleBuilder.append(Character.toUpperCase(c));
+				atStartOfWord = false;
+			}
+			else {
+				titleBuilder.append(c);
+			}
+			if (c == ' ' || c == '\t' || c == '.') {
+				atStartOfWord = true;
+			}
+		}
+		return titleBuilder.toString();
+	}
+	
 	// SOON TO BE DEPRECATED
-	// Returns two strings: a list of works (with infoboxes) sorted by the 
+	// Returns an array of strings including a list of works (with infoboxes) sorted by the 
 	// SortStoryBy's comparator, and a navigation section with links to each grouping
 	// if available
 	public static String[] buildIndexSortedBy(SortStoryBy comparator) {
@@ -1067,8 +1094,9 @@ public class FicArchiveBuilder {
 		return new String[] {listingNav, "Stories by " + comparator.toString(), indexOfStories};
 	}
 	
-	// Returns an array of three strings - the listing nav, the category name given
-	// and the string for the index of categories
+	// Returns an array of three strings - the listing nav, the category name
+	// and the string for the index of categories. Used to build the fandom 
+	// and author indexes.
 	public static String[] buildAlphabeticalIndexOf(Set<String> categories, String categoryFolderURL, String categoryName) {
 		String[] categoryArray = categories.toArray(new String[0]);
 		// Sort the stories array by the relevant comparator
@@ -1079,30 +1107,31 @@ public class FicArchiveBuilder {
 		StringBuilder listingNav = new StringBuilder();
 		// Headers for the values being compared
 		char b = ' ';
+		char a = ' ';
 		for (int i = 0; i < categoryArray.length; i++) {
-			if (i < categoryArray.length - 1) {
-				// Get the grouping header of the current story
-				b = Character.toUpperCase(categoryArray[i].charAt(0));
-				if (verbose) {
-					System.out.println(i + ": Grouping for " + categoryArray[i] + ": " + Character.toString(b));
+			// Get the grouping header of the current story
+			b = Character.toUpperCase(categoryArray[i].charAt(0));
+			// Only check the previous entry after at least one
+			if (i > 0) {
+				a = Character.toUpperCase(categoryArray[i-1].charAt(0));
+			}
+			if (verbose) {
+				System.out.println(i + ": Grouping for " + categoryArray[i] + ": " + Character.toString(b));
+			}
+			// Check if the current entry and the next's grouping match,
+			// Or if we are on the first story in the array.
+			if (i == 0 || a != b) { 
+				// Close the previous unordered list if we're moving to a new one
+				if (i != 0) {
+					categoryIndex.append("</ul>\n");
 				}
-				// Check if the current header and the current story's grouping match,
-				// Or if we are on the first story in the array.
-				// Note that checking i+1 is fine, because this only runs if 
-				// i < the biggest index of categoryArray
-				if (i == 0 || Character.toUpperCase(categoryArray[i+1].charAt(0)) != b) { 
-					// Close the previous unordered list
-					if (i != 0) {
-						categoryIndex.append("</ul>\n");
-					}
-					// Create a header for the new grouping
-					categoryIndex.append("<h2 id=" + b + ">" + b + "</h2>\n<ul>");
-					// And link to it in the listing navigation
-					listingNav.append("<a href=#" + b + ">" + b + "</a>\n");
-				}
+				// Create a header for the new grouping
+				categoryIndex.append("<h2 id=" + b + ">" + b + "</h2>\n<ul>");
+				// And link to it in the listing navigation
+				listingNav.append("<a href=#" + b + ">" + b + "</a>\n");
 			}
 			// Link to the first page of the category
-			categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(categoryArray[i]) + "_0.html\">" + categoryArray[i] + "</a></li>");
+			categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(categoryArray[i]) + "/1.html\">" + categoryArray[i] + "</a></li>");
 		}
 		// Close the last unordered list
 		if (categoryArray.length != 0) {
@@ -1116,43 +1145,31 @@ public class FicArchiveBuilder {
 	}	
 	
 	// Build all the pages for a category like tags/fandom/author/etc
-	public static void buildArchiveCategory(HashMap<String, ArrayList<Story>> map, File categoryFolderLocation, String categoryLabel, String titleLabel) {
+	public static void buildArchiveCategory(HashMap<String, ArrayList<Story>> map, File categoryFolder, String categoryLabel, String titleLabel) {
 		// Create the tag folder if it doesn't already exist
-		if (!categoryFolderLocation.exists()) {
-			categoryFolderLocation.mkdirs();
+		if (!categoryFolder.exists()) {
+			categoryFolder.mkdirs();
 		}
 		// For each tag, create the tag pages and write them to file with the url
 		// [name of the tagOutputFolder]/[URL-safe version of the tag].html
+		File categorySubfolder;
 		for (String category : map.keySet()) {
-			String[] pages = buildCategoryPages(categoryFolderLocation.getName(), category, map.get(category), titleLabel);
+			categorySubfolder = new File(categoryFolder, toSafeURL(category));
+			categorySubfolder.mkdirs();
+			String[] pages = buildCategoryPages(categoryFolder.getName() + "/", toTitleCase(category), map.get(category), (titleLabel + category));
 			if (verbose) {
 				System.out.println("Created " + pages.length + " page[s] for category " + category);
 			}
 			for (int i = 0; i < pages.length; i++) {
 				buildPage(buildStandardPageString(pages[i], (titleLabel + category + " (Page " + (i+1) + ")")), 
-				new File(categoryFolderLocation, (toSafeURL(category) + "_" + i + ".html")));
+				new File(categorySubfolder, (i+1) + ".html")); // page URLs start at 1
 			}
 		}
 	}
 	
-	// DEPRECATED
-	// Create the string for a page of all works with a particular tag
-	public static String buildCategoryPage(String category, ArrayList<Story> relatedStories, String label) {
-		// Sort by date updated
-		Collections.sort(relatedStories, new SortByDateUpdated().getComparator());
-		StringBuilder pageOutput = new StringBuilder();
-		for (int i = 0; i < relatedStories.size(); i++) {
-			// add the infobox for each story tagged
-			pageOutput.append(relatedStories.get(i).getStoryInfo());
-		}
-		String[] indexPageElements = new String[] {"", (label + category), pageOutput.toString()};
-		return writeIntoTemplate(workIndexTemplate, 
-		reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, indexPageElements), standardWorkIndexInsertionPoints));
-	}
-	
 	// Create a string array for all pages of all works with a particular tag
 	//  or category, sorted in reverse chronological order, with pagination
-	public static String[] buildCategoryPages(String categoryFolderURL, String category, ArrayList<Story> relatedStories, String label) {
+	public static String[] buildCategoryPages(String categoryFolderURL, String category, ArrayList<Story> relatedStories, String categoryLabel) {
 		// Sort stories by date updated
 		Collections.sort(relatedStories, new SortByDateUpdated().getComparator());
 		// Figure out how many pages we need to generate
@@ -1168,6 +1185,7 @@ public class FicArchiveBuilder {
 		String[] indexPageElements; // for inserting into template
 		String nextPage;
 		String prevPage; // pagination buttons
+		// Build all pages under the category
 		for (int i = 0; i < totalPages - 1; i++) {
 			prevPage = "";
 			pageOutput = new StringBuilder();
@@ -1180,22 +1198,22 @@ public class FicArchiveBuilder {
 			}
 			//TODO: change this to allow custom prev/next button labels
 			// Set pagination. Since we only generate up to the second-to-last page, there is always a next button.
-			nextPage = "<a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(category) + "_" + (i+1) + ".html\">Next</a>";
+			nextPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i+2) + ".html\">Next</a>";
 			prevPage = "";
 			if (i > 0) {
-				prevPage = "<a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(category) + "_" + (i-1) + ".html\">Previous</a>";
+				prevPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i) + ".html\">Previous</a>";
 			}
 			// Generate pagination buttons from template
 			pageOutput.append(paginationTemplate.replace("{Next}", nextPage).replace("{Previous}", prevPage));
 			// Create page elements array
-			indexPageElements = new String[] {"", (((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size() + " " + label + category), pageOutput.toString()};
+			indexPageElements = new String[] {"", (((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size() + " " + categoryLabel), pageOutput.toString()};
 			pageStrings[i] = writeIntoTemplate(workIndexTemplate, 
 			reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, indexPageElements), standardWorkIndexInsertionPoints));
 		}
 		// Create pagination for final page
 		nextPage = "";
 		if (totalPages > 1) {
-			prevPage = "<a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(category) + "_" + (totalPages - 2) + ".html\">Previous</a>";
+			prevPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (totalPages - 1) + ".html\">Previous</a>";
 		}
 		else {
 			prevPage = "";
@@ -1208,7 +1226,7 @@ public class FicArchiveBuilder {
 		// Generate pagination from template
 		pageOutput.append(paginationTemplate.replace("{Next}", nextPage).replace("{Previous}", prevPage));
 		// Create page elements array
-		indexPageElements = new String[] {"", (((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size() + " " + label + category), pageOutput.toString()};
+		indexPageElements = new String[] {"", (((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size() + " " + categoryLabel), pageOutput.toString()};
 		// Insert the resulting page into the last entry of pageStrings
 		pageStrings[totalPages - 1] = writeIntoTemplate(workIndexTemplate, 
 		reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, indexPageElements), standardWorkIndexInsertionPoints));
@@ -1217,8 +1235,16 @@ public class FicArchiveBuilder {
 	}
 	
 	//@override
-	public static String buildCategoryPage(String category, ArrayList<Story> relatedStories) {
-		return buildCategoryPage(category, relatedStories, "Stories in ");
+	public static String[] buildCategoryPages(String category, ArrayList<Story> relatedStories) {
+		return buildCategoryPages((output.getName() + "/" + category), category, relatedStories, "Stories in ");
+	}
+	
+	public static String[] buildCategoryPages(String categoryFolderURL, String category, Story[] relatedStories, String label) {
+		ArrayList<Story> storiesArrayList = new ArrayList<Story>(relatedStories.length);
+		for (Story story : relatedStories) {
+			storiesArrayList.add(story);
+		}
+		return buildCategoryPages(categoryFolderURL, category, storiesArrayList, label);
 	}
 	
 	// Converts potentially unsafe input strings (like story tags) into strings
@@ -1234,8 +1260,8 @@ public class FicArchiveBuilder {
 				url.append('-');
 			}
 			// 45 = '-', 95 = '_', 48-57 = digits 0-9, 65-90 = A-Z, 97-122 = a-z
-			else if (!((c > 96 && c < 123) || (c > 64 && c < 91) || (c == 45) || (c > 47 && c < 58))) {
-				url.append("-" + c);
+			else if (!((c > 96 && c < 123) || (c > 64 && c < 91) || (c > 47 && c < 58))) {
+				url.append("_" + c);
 			}
 			else {
 				url.append(s.charAt(i));

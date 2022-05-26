@@ -20,6 +20,15 @@ public class SortStoryBy {
 	}	
 	// Gets the actual comparator for sorting
 	public Comparator<Story> getComparator() {
-		return new FandomComparator();
+		return new GenericStoryComparator();
+	}
+}
+
+// This is really just here to keep Java from freaking out about
+// StorySortBy not having a getComparator method that returns a Comparator<Story>
+// of some kind. It's not really used anywhere.
+class GenericStoryComparator implements Comparator<Story> {
+	public int compare(Story a, Story b) {
+		return a.getStoryTitle().compareTo(b.getStoryTitle());
 	}
 }
