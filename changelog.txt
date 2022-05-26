@@ -1,0 +1,95 @@
+CHANGELOG
+	
+	2022 May 25
+		- Moved changelog and to-do list to a separate file.
+		- Now on version 0.2.5
+		- Removed regex import as it was no longer needed.
+		- Added pagination! Complete with customizable maximum items per page.
+		- Changed by_author, by_fandom, to be indexes of authors and fandoms,
+		  and added "authors" and "fandoms" subfolders to have all works under
+		  each author/fandom
+		- Changed the formatting of toSafeURL()'s output to ensure that tag pages
+		  have unique urls when paginated. Unsafe chars are now replaced with "_##"
+		  (where ## = int value of the char), and the pagination is appended at
+		  the end as "_#" (# = pagenumber), so they can't accidentally overwrite
+		  one another.
+	
+	2022 May 24
+		- Better commenting on the numberWithCommas() method
+		- Replaced the toSafeURL() function with a much faster version that
+		  uses a StringBuilder and char int values instead of regex. The new
+		  function is literally about 30x faster than the first attempt. Phew!
+		- Replaced String concatenation in the readFileToString(), convertToHTML()
+		  and insertIntoTemplate() functions with StringBuilder append, which
+		  seems to reduce total running time by about 30%. 
+		  (Average ~700ms -> ~450ms for the original public domain demo.)
+		- Added Frankenstein and Dracula's first several chapters to the demo input.
+		- Implemented tags!!
+		- Added generation of tag pages in a designated "tags" folder in output.
+		- Broke the authors index navigation. Oops.
+		- Fixed authors/title/etc index navigation, and modified it to not
+		  generate a nav section if not needed.
+	
+	2022 May 23
+		- Now on version 0.2.4
+		- Revamped the Casual HTML parser to work for an entire text block
+		  instead of line by line, so it can distinguish between paragraph
+		  and line breaks. It also now uses a HashSet to check for HTML tags
+		  instead of a dozen string comparisons.
+		- Removed command line arguments for changing field labels. These can
+		  just be read from file, and were clogging up the options list.
+		- Began work on a system for subgrouping on index pages, currently not
+		  implemented.
+		- Added a {ListingTitle} field to the work index template.
+		- Added a (very bad) function to convert potentially unsafe strings into
+		  viable URLs/folder names.
+	
+	2022 May 22
+		- Added authorLabel and getAuthorLabel() for works not using a byline
+		- Replaced getField(label, content) and getSummaryField(label, content) 
+		  with a single getField() method that takes the field as the first argument,
+		  then the label and content, for better reusability.
+		- Fixed bug where hasDateUpdated and hasDatePublished had been accidentally swapped
+		  in Story's code for re-converting the dates to strings for display
+		- Added a hashset and array for tags in Story.java, and a hashset for the 
+		  general tagset in FicArchiveBuilder as well
+		- Moved story output folders to a subfolder "stories" in the output folder
+		- Added a "by author" index and SortStoryBy + Comparator, plus AuthorNumber
+		  (and getTotalAuthors() to calculate it) in the site stats widgets.
+		- Added comma formatting to the wordcounts on infoboxes
+		- Added Poe's 'The Raven' and 'The Cask of Amontillado' to the demo input.
+	
+	2022 May 21
+		- Now on version 0.2.3
+		- Moved the parsing of command line arguments to a separate method, parseArgs()
+		- Added code to copy CSS stylesheets to output directory
+		- Added an "Author" field and optiona byLine template (currently not tested yet)
+		- Added Fandom and Story Title comparators and associated objects (SortStoryBy + children)
+		- Added buildIndexSortedBy() method, which generates an index of all works, sorted
+		  by the given SortStoryBy object's parameters.
+		- Added options to skip any and all of these indices
+		- Main now creates a separate homepage, with optional site stats
+		- Added option to ignore a leading "The" in titles and fandom names when sorting
+		- Added LocalDate objects to Story.java for date comparison
+		- Added DateUpdated comparator (which sorts reverse chronologically) and a by_latest.html
+		  index.
+	
+	2022 May 20
+		- Added site path option for URL prefacing when generating links
+		- Added 'skip empty fields' option
+	
+	2022 May 19
+		- Began changelog
+		- Fixed a bug where Story.java's storyInfo String is never actually
+		  filled out, causing the infobox to be rebuilt every time getStoryInfo()
+		  is called.
+		- Changed "storydata.txt" to "storyinfo.txt"
+		- Added completion status to standard infobox (keywords, pagebuilding)
+		- Created buildSummaryField(String, String) and  buildField(String, String) 
+		  methods for Story.java to quickly assemble fields using field and summary 
+		  templates, so the fields can be given further custom formatting, and empty
+		  fields can be skipped.
+		- Added template file inputs for summaries/notes and fields (summaries.txt, fields.txt)
+		- Added customizable labels for all major fields
+		- Added commandline arguments for field customization, and the option of
+		  reading in field labels from an input file (labels.txt)
