@@ -13,7 +13,7 @@ import java.time.format.*;
 
 public class FicArchiveBuilder {
 	// Version string for manual and about text
-	private static String versionString = "v0.2.5";
+	private static String versionString = "v0.2.6";
 
 	/***
 	For input and output folders.
@@ -37,10 +37,12 @@ public class FicArchiveBuilder {
 	
 	// Used for HTML converter formatting	
 	private static HashSet<String> nonParagraphHTMLTags;
-	// Line break, horizontal line, heading, end of a tag, div, image, iframe, blockquote
+	// In order: line break, horizontal line, heading, end of a tag, div, image, 
+	// iframe, blockquote, table, table row, table data, table heading.
 	// {!} can be used to tell ChiveGen to ignore a line for formatting
 	// regardless of what else it starts with
-	private static String[] acceptedOpeningHTMLTags = new String[] {"<br>", "<br/>", "<hr>", "<h", "</", "<div", "<img", "<ifra", "<bloc", "{!}"};
+	private static String[] acceptedOpeningHTMLTags = new String[] {"<br>", "<br/>", "<hr>", "<h", "</", "<div", "<img", 
+	"<ifra", "<bloc", "<ta", "<tr", "<td", "<th", "<nope"};
 	
 	/***
 	These store the fields we want to insert stuff into in pages, chapters, and story infoboxes
@@ -60,7 +62,7 @@ public class FicArchiveBuilder {
 	"{Summary}", "{IsComplete}", "{Author}", "{Tags}", "{Rating}"};
 	private static String[] chapterKeywords = new String[] {"{StoryInfo}", "{ChapterTitle}", "{StoryNotes}", "{ChapterBody}", "{TopPagination}", "{BottomPagination}"};
 	private static String[] paginationKeywords = new String[] {"{Previous}", "{Next}"};	// not currently used
-	private static String[] workIndexKeywords = new String[] {"{Navigation}", "{ListingTitle}", "{Listings}"};	
+	private static String[] workIndexKeywords = new String[] {"{Navigation}", "{ListingTitle}", "{CurrentlyShowing}", "{Listings}"};	
 	private static String[] statsWidgetKeywords = new String[] {"{StoryNumber}", "{TotalWordcount}", "{FandomNumber}", "{AuthorNumber}"};	
 	
 	/***
@@ -91,6 +93,9 @@ public class FicArchiveBuilder {
 	private static String ratingLevelM = "MA";
 	private static String ratingLevelE = "E";
 	private static String ratingLevelNR = "Not Rated";
+	// Used on certain pages titles
+	private static String titleIndexLabel = "Stories by Title";
+	private static String latestIndexLabel = "Stories by Date Updated";
 	// Name of website. Used in various places.
 	private static String siteName = "Archive";
 	// Regex template for page titles.
@@ -115,7 +120,7 @@ public class FicArchiveBuilder {
 		"<div class=notes>\n{StoryNotes}\n</div>\n" +
 		"{ChapterBody}\n<div class=\"chapter-nav bottom-nav\">\n{BottomPagination}\n</div>");
 	private static String paginationTemplate = "<div class=pagination>{Previous}\n{Next}</div>";
-	private static String workIndexTemplate = "{Navigation}\n<h1>\n{ListingTitle}\n</h1><div class=listings>\n{Listings}\n</div>";
+	private static String workIndexTemplate = "{Navigation}\n<h1>\n{ListingTitle}\n</h1>\n<h2>\n{CurrentlyShowing}\n</h2><div class=listings>\n{Listings}\n</div>";
 	private static String summaryTemplate = "{L}: {C}";
 	private static String fieldTemplate = "{L}: {C}";
 	private static String byLineTemplate = " by {C}";
@@ -272,12 +277,26 @@ public class FicArchiveBuilder {
 				}
 				summaryTemplate = readFileToString(summaryTemplateFile);
 			}
+			File paginationTemplateFile = new File(input, "pagination.txt");
+			if (paginationTemplateFile.exists()) {
+				if (verbose) {
+					System.out.println("Pagination template found in input directory.");
+				}
+				paginationTemplate = readFileToString(paginationTemplateFile);
+			}
 			File fieldTemplateFile = new File(input, "fields.txt");
 			if (fieldTemplateFile.exists()) {
 				if (verbose) {
 					System.out.println("Field template found in input directory.");
 				}
 				fieldTemplate = readFileToString(fieldTemplateFile);
+			}
+			File workIndexFile = new File(input, "stories_by.txt");
+			if (workIndexFile.exists()) {
+				if (verbose) {
+					System.out.println("Work index template found in input directory.");
+				}
+				workIndexTemplate = readFileToString(workIndexFile);
 			}
 			File fieldLabels = new File(input, "labels.txt");
 			if (fieldLabels.exists()) {
@@ -292,13 +311,6 @@ public class FicArchiveBuilder {
 					System.out.println("Custom ratings file found in input directory.");
 				}
 				setRatings(customRatings);
-			}
-			File workIndexFile = new File(input, "stories_by.txt");
-			if (workIndexFile.exists()) {
-				if (verbose) {
-					System.out.println("Work index template found in input directory.");
-				}
-				workIndexTemplate = readFileToString(workIndexFile);
 			}
 			// These will be used a lot, so it's simplest to just generate 
 			// the hashmaps ahead of time for reuse
@@ -318,10 +330,13 @@ public class FicArchiveBuilder {
 				System.out.println("Reading work index page template...");
 			}
 			standardWorkIndexInsertionPoints = findTemplateInsertionPoints(workIndexTemplate, workIndexKeywords);
+			/***
+			// Currently skipped since this is not used.
 			if (!brief) {
 				System.out.println("Reading pagination template...");
 			}
 			standardPaginationInsertionPoints = findTemplateInsertionPoints(paginationTemplate, paginationKeywords);
+			***/
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
 				output.mkdirs();
@@ -368,14 +383,18 @@ public class FicArchiveBuilder {
 						addToStoryMap(archiveFandomMap, stories[i].getFandom(), stories[i]);
 					}		
 					// Build indexes of works by various orderings
-					String currentIndex;			
+					String currentIndex;
+					// Create index by title
 					if (!skipTitleIndex) {
-						currentIndex = writeIntoTemplate(workIndexTemplate, 
-						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildIndexSortedBy(new SortByStoryTitle())), standardWorkIndexInsertionPoints));
-						// BUILD INDEX PAGE
-						buildPage(buildStandardPageString(currentIndex, buildPageTitle("By Title")), new File(output, "by_title.html"));
-						if (verbose) {
-							System.out.println("Title index page created.");
+						File allByTitleFolder = new File(output, "by_title");
+						if (!allByTitleFolder.exists()) {
+							allByTitleFolder.mkdirs();
+						}
+						Arrays.sort(stories, new SortByStoryTitle().getComparator());
+						// Create pages
+						String[] allByTitle = buildCategoryPages("", "by_title", stories, titleIndexLabel);
+						for (int i = 0; i < allByTitle.length; i++) {
+							buildPage(buildStandardPageString(allByTitle[i], titleIndexLabel + " (Page " + (i+1) + ")"), new File(allByTitleFolder, (i+1) + ".html"));
 						}
 					}
 					// Create index of all works in reverse chronological
@@ -387,16 +406,16 @@ public class FicArchiveBuilder {
 						}
 						Arrays.sort(stories, new SortByDateUpdated().getComparator());
 						// Create pages
-						String[] allByLatest = buildCategoryPages("", "latest", stories, "Stories");
+						String[] allByLatest = buildCategoryPages("", "latest", stories, latestIndexLabel);
 						for (int i = 0; i < allByLatest.length; i++) {
-							buildPage(buildStandardPageString(allByLatest[i], "Latest Stories (Page " + (i+1) + ")"), new File(allByLatestFolder, (i+1) + ".html"));
+							buildPage(buildStandardPageString(allByLatest[i], latestIndexLabel + " (Page " + (i+1) + ")"), new File(allByLatestFolder, (i+1) + ".html"));
 						}
 					}
 					// Create fandom index if we have at least one fandom
 					if (!skipFandomIndex) {
 						// Generate fandom index page
 						currentIndex = writeIntoTemplate(workIndexTemplate, 
-						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildAlphabeticalIndexOf(archiveFandomMap.keySet(), "fandoms", "Fandoms")), standardWorkIndexInsertionPoints));
+						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildAlphabeticalIndexOf(archiveFandomMap, "fandoms", "Fandoms")), standardWorkIndexInsertionPoints));
 						// BUILD INDEX PAGE
 						buildPage(buildStandardPageString(currentIndex, buildPageTitle("By Fandom")), new File(output, "by_fandom.html"));
 						if (verbose) {
@@ -414,7 +433,7 @@ public class FicArchiveBuilder {
 					if (!skipAuthorIndex && archiveHasAuthors) {
 						// Generate index page
 						currentIndex = writeIntoTemplate(workIndexTemplate, 
-						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildAlphabeticalIndexOf(archiveAuthorMap.keySet(), "authors", "Authors")), standardWorkIndexInsertionPoints));
+						reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, buildAlphabeticalIndexOf(archiveAuthorMap, "authors", "Authors")), standardWorkIndexInsertionPoints));
 						// BUILD INDEX PAGE
 						buildPage(buildStandardPageString(currentIndex, buildPageTitle("By Author")), new File(output, "by_author.html"));
 						if (verbose) {
@@ -862,14 +881,17 @@ public class FicArchiveBuilder {
 		return fileContents.toString();
 	}
 	
+	//@override
 	public static String readFileToString(File inputFile, int leftTabs) {
 		return readFileToString(inputFile, leftTabs, false); // default to no casual html
 	}
 	
+	//@override
 	public static String readFileToString(File inputFile, boolean useCasualHTML) {
 		return readFileToString(inputFile, 0, useCasualHTML);
 	}
 	
+	//@override
 	public static String readFileToString(File inputFile) {
 		return readFileToString(inputFile, 0, false);
 	}
@@ -884,10 +906,13 @@ public class FicArchiveBuilder {
 		Scanner currentReader = new Scanner(text);
 		Scanner nextLineReader = new Scanner(text);
 		String current = "";
+		String current2 = "";
 		String next = "";
 		int currentPosition = 0;
 		int nextPosition = 0;
+		boolean isParagraph;
 		while (nextLineReader.hasNextLine()) {
+			isParagraph = false;
 			// Get the next line
 			next = nextLineReader.nextLine(); 
 			nextPosition++;
@@ -897,32 +922,45 @@ public class FicArchiveBuilder {
 				nextPosition++;
 			}
 			// Now we look through the lines between current's starting point and next
-			 // currentReader reads the first line of the current paragraph; moves a line forward
+			// currentReader reads the first line of the current paragraph; moves a line forward
 			if (currentReader.hasNextLine()) {
 				current = currentReader.nextLine();
 				currentPosition++;
 			}
+			// Check for any opening tags that would suggest we aren't in a paragraph
+			isParagraph = !detectNonParagraphHTMLTags(current);
 			// If the current line starts with <p>, don't add it.
-			if (!stripLeadingTabsAndSpaces(current).startsWith("<p")) {
+			if (isParagraph && !stripLeadingTabsAndSpaces(current).startsWith("<p")) {
 				formattedOutput.append("<p>");
 			}
 			formattedOutput.append(current);
 			// If we have more lines than the first, keep reading and adding <br> until nextPos is reached.
 			while (currentPosition < nextPosition) {
+				// keep track of the last line in case it ends with a </p> tag
+				if (currentPosition == nextPosition - 1) {
+					current2 = current;
+				}
+				// Get the next line
 				current = currentReader.nextLine();
 				currentPosition++;
 				// If this is clearly not a paragraph, don't format it
 				if (detectNonParagraphHTMLTags(stripLeadingTabsAndSpaces(current))) {
-					formattedOutput.append(current); // just append without formatting
+					formattedOutput.append(current + "\n"); // just append without formatting
 				}
 				// Otherwise, insert line breaks as appropriate
 				else {
 					formattedOutput.append("\n<br>" + current);
 				}
 			}
-			// if the most recent line of currentReader doesn't end in </p>, add it.
-			if (!current.endsWith("/p>")) {
-				formattedOutput.append("</p>\n");
+			if (isParagraph) {
+				// if the 2nd most recent line of currentReader doesn't end in </p>, add it.
+				if (nextLineReader.hasNextLine() && !current2.endsWith("/p>")) {
+					formattedOutput.append("</p>\n");
+				}
+				// Otherwise, if we're at the end of the string, check the last line
+				if (!nextLineReader.hasNextLine() && !current.endsWith("/p>")) {
+					formattedOutput.append("</p>");
+				}
 			}
 		}
 		return formattedOutput.toString();
@@ -937,13 +975,14 @@ public class FicArchiveBuilder {
 		// Strip whitespace, and get a substring of only the first maxTagLength+1 characters
 		String comparisonSubstring = s.replaceAll("\\s", ""); 
 		int maxTagLength = 5;
-		if (s.length() > maxTagLength) { // only get the substring if it's longer than maxTagLength
+		if (comparisonSubstring.length() > maxTagLength) { // only get the substring if it's longer than maxTagLength
 			comparisonSubstring = comparisonSubstring.substring(0, maxTagLength);
+			//System.out.print(comparisonSubstring + "\t");
 		}
 		// Check progressively shorter versions of the string against the set
 		// of non-paragraph HTML tags
 		int j = comparisonSubstring.length(); // in case the string was shorter than maxTagLength
-		for (int i = j; i > 1; i--) {
+		for (int i = j; i > 0; i--) {
 			if (nonParagraphHTMLTags.contains(comparisonSubstring)) {
 				return true;
 			}
@@ -1150,53 +1189,12 @@ public class FicArchiveBuilder {
 		}
 	}
 	
-	// SOON TO BE DEPRECATED
-	// Returns an array of strings including a list of works (with infoboxes) sorted by the 
-	// SortStoryBy's comparator, and a navigation section with links to each grouping
-	// if available
-	public static String[] buildIndexSortedBy(SortStoryBy comparator) {
-		// Sort the stories array by the relevant comparator
-		Arrays.sort(stories, comparator.getComparator());
-		// String for story index
-		String indexOfStories = "";
-		// Whether or not to group content under headings
-		boolean groupingHeaders = comparator.isGroupable();
-		// String for quick links into index, if heading groups are used
-		String listingNav = "";
-		// Headers for the values being compared
-		String b = "";
-		System.out.println("Building " + comparator.toString() + " index...");
-		for (int i = 0; i < stories.length; i++) {
-			if (groupingHeaders) {
-				if (i < stories.length) {
-					// Get the grouping header of the current story
-					b = comparator.getGroupingHeader(stories[i]);
-					if (verbose) {
-						System.out.println(i + ": Grouping for " + stories[i].getStoryTitle() + ": " + b);
-					}
-					// Check if the current header and the current story's grouping match,
-					// Or if we are on the first story in the array
-					if (i == 0 || !comparator.getGroupingHeader(stories[i-1]).equals(b)) { 
-						// Create a header for the new grouping
-						indexOfStories = indexOfStories.concat("<h2 id=" + b + ">" + b + "</h2>");
-						// And link to it in the listing navigation
-						listingNav = listingNav.concat("<a href=#" + b + ">" + b + "</a>\n");
-					}
-				}
-			}
-			indexOfStories = indexOfStories.concat(stories[i].getStoryInfo());
-		}
-		if (!listingNav.equals("")) { // only create this if there's something to put in it
-			listingNav = workIndexNavigationTemplate.replace("{C}", listingNav).replace("{L}", "Navigation");
-		}
-		return new String[] {listingNav, "Stories by " + comparator.toString(), indexOfStories};
-	}
 	
 	// Returns an array of three strings - the listing nav, the category name
 	// and the string for the index of categories. Used to build the fandom 
 	// and author indexes.
-	public static String[] buildAlphabeticalIndexOf(Set<String> categories, String categoryFolderURL, String categoryName) {
-		String[] categoryArray = categories.toArray(new String[0]);
+	public static String[] buildAlphabeticalIndexOf(HashMap<String, ArrayList<Story>> categories, String categoryFolderURL, String categoryName) {
+		String[] categoryArray = categories.keySet().toArray(new String[0]);
 		// Sort the stories array by the relevant comparator
 		Arrays.sort(categoryArray);
 		// Stringbuilder for story index
@@ -1229,7 +1227,8 @@ public class FicArchiveBuilder {
 				listingNav.append("<a href=#" + b + ">" + b + "</a>\n");
 			}
 			// Link to the first page of the category
-			categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(categoryArray[i]) + "/1.html\">" + categoryArray[i] + "</a></li>");
+			categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(categoryArray[i]) + "/1.html\">" + 
+			categoryArray[i] + "</a> (" + categories.get(categoryArray[i]).size() + ")</li>");
 		}
 		// Close the last unordered list
 		if (categoryArray.length != 0) {
@@ -1239,7 +1238,7 @@ public class FicArchiveBuilder {
 		if (!listingNav.equals("")) { // only create this if there's something to put in it
 			listingNavString = workIndexNavigationTemplate.replace("{C}", listingNav.toString()).replace("{L}", "Navigation");;
 		}
-		return new String[] {listingNavString, categoryName, categoryIndex.toString()};
+		return new String[] {listingNavString, categoryName, "", categoryIndex.toString()};
 	}	
 	
 	// Build all the pages for a category like tags/fandom/author/etc
@@ -1254,6 +1253,8 @@ public class FicArchiveBuilder {
 		for (String category : map.keySet()) {
 			categorySubfolder = new File(categoryFolder, toSafeURL(category));
 			categorySubfolder.mkdirs();
+			// Sort stories in the category by date updated
+			Collections.sort(map.get(category), new SortByDateUpdated().getComparator());
 			String[] pages = buildCategoryPages(categoryFolder.getName() + "/", category, map.get(category), (titleLabel + toTitleCase(category)));
 			if (verbose) {
 				System.out.println("Created " + pages.length + " page[s] for category " + category);
@@ -1268,8 +1269,6 @@ public class FicArchiveBuilder {
 	// Create a string array for all pages of all works with a particular tag
 	//  or category, sorted in reverse chronological order, with pagination
 	public static String[] buildCategoryPages(String categoryFolderURL, String category, ArrayList<Story> relatedStories, String categoryLabel) {
-		// Sort stories by date updated
-		Collections.sort(relatedStories, new SortByDateUpdated().getComparator());
 		// Figure out how many pages we need to generate
 		int totalPages = relatedStories.size() / maxItemsPerPage;
 		if (relatedStories.size() % maxItemsPerPage != 0) {
@@ -1303,7 +1302,8 @@ public class FicArchiveBuilder {
 			// Generate pagination buttons from template
 			pageOutput.append(paginationTemplate.replace("{Next}", nextPage).replace("{Previous}", prevPage));
 			// Create page elements array
-			indexPageElements = new String[] {"", (((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size() + " " + categoryLabel), pageOutput.toString()};
+			indexPageElements = new String[] {"", ("Showing " + ((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size() + " " + categoryLabel),
+			pageOutput.toString()};
 			pageStrings[i] = writeIntoTemplate(workIndexTemplate, 
 			reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, indexPageElements), standardWorkIndexInsertionPoints));
 		}
@@ -1323,7 +1323,8 @@ public class FicArchiveBuilder {
 		// Generate pagination from template
 		pageOutput.append(paginationTemplate.replace("{Next}", nextPage).replace("{Previous}", prevPage));
 		// Create page elements array
-		indexPageElements = new String[] {"", (((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size() + " " + categoryLabel), pageOutput.toString()};
+		indexPageElements = new String[] {"", categoryLabel, 
+		("Showing " + ((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size()), pageOutput.toString()};
 		// Insert the resulting page into the last entry of pageStrings
 		pageStrings[totalPages - 1] = writeIntoTemplate(workIndexTemplate, 
 		reassociateIntegers(generateHashMapFromArrays(workIndexKeywords, indexPageElements), standardWorkIndexInsertionPoints));

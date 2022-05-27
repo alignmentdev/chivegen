@@ -11,6 +11,15 @@ CHANGELOG
 		  FicArchiveBuilder.
 		- Ditched hardcoded rating strings and added option for custom ratings
 		  using a "ratings.txt" file.
+		- Changed title index to use the same new function as the latest stories
+		  index, so the old buildIndexSortedBy() method could finally be removed.
+		- Removed buildIndexSortedBy(), as it is no longer used.
+		- Updated version string to 0.2.6
+		- Change workIndexTemplate and its keywords to separate the "Showing #-# of #"
+		  part onto its own line.
+		- Added support for pagination template files.
+		- Fixed bug in Casual HTML parser that kept adding extra </p> tags on 
+		  preformatted paragraphs.
 	
 	2022 May 26, Part 1
 		- Fixed a bug where buildAlphabeticalIndexOf() wouldn't put the last entry
