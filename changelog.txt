@@ -1,6 +1,18 @@
 CHANGELOG
 	
-	2022 May 26
+	2022 May 26, Part 2
+		- Moved numberWithCommas() from Story.java to FicArchiveBuilder.java
+		- Began working on basic documentation for usage
+		- Fixed a bug with the toTitleCase() method that allcapsed everything instead.
+		- Fixed a bug with pagination that linked to a wrongly capitalized URL.
+		- Added custom next page/previous page link labels.
+		- Fixed bug where label input reader used next() instead of nextLine()
+		- Added ratings field to story infoboxes, and moved getRatingString() to
+		  FicArchiveBuilder.
+		- Ditched hardcoded rating strings and added option for custom ratings
+		  using a "ratings.txt" file.
+	
+	2022 May 26, Part 1
 		- Fixed a bug where buildAlphabeticalIndexOf() wouldn't put the last entry
 		  of the index under its own heading. Also updated the links it generated
 		  for the new URL schema.

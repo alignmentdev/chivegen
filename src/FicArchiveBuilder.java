@@ -56,7 +56,8 @@ public class FicArchiveBuilder {
 	private static HashMap<String, Integer> standardWorkIndexInsertionPoints;
 	// The standard set of fields for each template
 	private static String[] standardKeywords = new String[] {"{Title}", "{Main}", "{Footer}"};
-	private static String[] storyInfoKeywords = new String[] {"{StoryTitle}", "{Fandom}", "{Wordcount}", "{Chapters}", "{Published}", "{Updated}", "{Summary}", "{IsComplete}", "{Author}", "{Tags}"};
+	private static String[] storyInfoKeywords = new String[] {"{StoryTitle}", "{Fandom}", "{Wordcount}", "{Chapters}", "{Published}", "{Updated}", 
+	"{Summary}", "{IsComplete}", "{Author}", "{Tags}", "{Rating}"};
 	private static String[] chapterKeywords = new String[] {"{StoryInfo}", "{ChapterTitle}", "{StoryNotes}", "{ChapterBody}", "{TopPagination}", "{BottomPagination}"};
 	private static String[] paginationKeywords = new String[] {"{Previous}", "{Next}"};	// not currently used
 	private static String[] workIndexKeywords = new String[] {"{Navigation}", "{ListingTitle}", "{Listings}"};	
@@ -80,6 +81,16 @@ public class FicArchiveBuilder {
 	private static String notesLabel = "Notes";
 	private static String authorLabel = "Author";
 	private static String tagsLabel = "Tags";
+	private static String ratingLabel = "Rating";
+	private static String nextPageLabel = "Next Page";
+	private static String prevPageLabel = "Previous Page";
+	// Used for archive ratings system
+	private static String ratingLevelG = "G";
+	private static String ratingLevelPG = "PG";
+	private static String ratingLevelT = "T";
+	private static String ratingLevelM = "MA";
+	private static String ratingLevelE = "E";
+	private static String ratingLevelNR = "Not Rated";
 	// Name of website. Used in various places.
 	private static String siteName = "Archive";
 	// Regex template for page titles.
@@ -109,6 +120,8 @@ public class FicArchiveBuilder {
 	private static String fieldTemplate = "{L}: {C}";
 	private static String byLineTemplate = " by {C}";
 	private static String workIndexNavigationTemplate = "<div class=listingnav>{C}</div>";
+	private static String tagTemplate = "<div class=tag>{C}</div>";
+	private static String tagLastTemplate = "<div class=\"tag last\">{C}</div>";
 	
 	/***
 	Used to provide formatting for dates such as date updated/date published.
@@ -273,7 +286,14 @@ public class FicArchiveBuilder {
 				}
 				setFieldLabels(fieldLabels);
 			}
-			File workIndexFile = new File(input, "works_by.txt");
+			File customRatings = new File(input, "ratings.txt");
+			if (customRatings.exists()) {
+				if (verbose) {
+					System.out.println("Custom ratings file found in input directory.");
+				}
+				setRatings(customRatings);
+			}
+			File workIndexFile = new File(input, "stories_by.txt");
 			if (workIndexFile.exists()) {
 				if (verbose) {
 					System.out.println("Work index template found in input directory.");
@@ -958,6 +978,82 @@ public class FicArchiveBuilder {
 		return tabs;
 	}
 	
+	// Formats the wordcount as a String with commas (i.e. 1,234,567)
+	public static String numberWithCommas(int n) {
+		StringBuilder numberWithCommas = new StringBuilder();
+		int magnitude = 1;
+		int chunks = -1; // last 3 digits don't count as a chunk
+		// How many comma-separated "chunks" the number can broken into
+		while (n / magnitude >= 1) {
+			chunks++;
+			magnitude *= 1000; // assume western-style 3-digit chunks
+		}
+		int currentChunk = 0;
+		for (int i = chunks; i > 0; i--) {
+			currentChunk = (n - (n % (1000^i))); // get the next chunk of digits as an int
+			n = n - currentChunk; // remove it from n
+			// Add to string the current chunk, without trailing zeroes, and then a comma
+			numberWithCommas.append(Integer.toString(currentChunk  / (1000^i)) + ",");
+		}
+		return numberWithCommas.append(Integer.toString(n)).toString();
+	}
+	
+	// Takes a string and converts it to Title Case
+	public static String toTitleCase(String text) {
+		if (text.equals("")) {
+			return text;
+		}
+		StringBuilder titleBuilder = new StringBuilder();
+		boolean atStartOfWord = true;
+		char c = ' ';
+		for (int i = 0; i < text.length(); i++) {
+			c = text.charAt(i);
+			// Check that c is actually a letter! 64-91 is caps, 96-123 is lower
+			if (atStartOfWord && ((c > 64 && c < 91) || (c > 96 && c < 123))) {
+				titleBuilder.append(Character.toUpperCase(c));
+				atStartOfWord = false;
+			}
+			else {
+				titleBuilder.append(c);
+			}
+			if (c == ' ' || c == '\t' || c == '.') {
+				atStartOfWord = true;
+			}
+		}
+		return titleBuilder.toString();
+	}
+	
+	// Converts potentially unsafe input strings (like story tags) into strings
+	// that are safe for URLs. Unsafe characters are replaced with "_##" where
+	// "##" is the int value of the character.
+	public static String toSafeURL(String s) {
+		StringBuilder url = new StringBuilder();
+		int c = 0;
+		for (int i = 0; i < s.length(); i++) {
+			c = s.charAt(i); // get the int value of the ith character
+			// 32 = space
+			if (c == 32) {
+				url.append('-');
+			}
+			// 45 = '-', 95 = '_', 48-57 = digits 0-9, 65-90 = A-Z, 97-122 = a-z
+			else if (!((c > 96 && c < 123) || (c > 64 && c < 91) || (c > 47 && c < 58))) {
+				url.append("_" + c);
+			}
+			else {
+				url.append(s.charAt(i));
+			}
+		}
+		return url.toString();
+	}
+	
+	// Removes a leading "the" (and puts stuff into all lowercase) for comparison
+	public static String stripLeadingThe(String s) {
+		s = s.toLowerCase();
+		if (s.startsWith("the ")) {
+			s = s.replace("the ", "");
+		}
+		return s;
+	}
 	
 	// Builds a page title using regex and a template.
 	public static String buildPageTitle(String subtitle, String title) {
@@ -1004,17 +1100,19 @@ public class FicArchiveBuilder {
 			Scanner labelReader = new Scanner(labelsFile);
 			// Used when building chapter pages
 			try {
-				nextChapterButton = labelReader.next();
-				prevChapterButton = labelReader.next();
-				tocButton = labelReader.next();
-				fandomLabel = labelReader.next();
-				updatedLabel = labelReader.next();
-				publishedLabel = labelReader.next();
-				wordcountLabel = labelReader.next();
-				chapterCountLabel = labelReader.next();
-				completionLabel = labelReader.next();
-				summaryLabel = labelReader.next();
-				notesLabel = labelReader.next();
+				nextPageLabel = labelReader.nextLine();
+				prevPageLabel = labelReader.nextLine();
+				nextChapterButton = labelReader.nextLine();
+				prevChapterButton = labelReader.nextLine();
+				tocButton = labelReader.nextLine();
+				fandomLabel = labelReader.nextLine();
+				updatedLabel = labelReader.nextLine();
+				publishedLabel = labelReader.nextLine();
+				wordcountLabel = labelReader.nextLine();
+				chapterCountLabel = labelReader.nextLine();
+				completionLabel = labelReader.nextLine();
+				summaryLabel = labelReader.nextLine();
+				notesLabel = labelReader.nextLine();
 			} catch (NoSuchElementException e) {
 				System.out.println("Error: reached the end of the field labels file too early. Make sure all fields are accounted for!");
 				labelReader.close();
@@ -1027,29 +1125,29 @@ public class FicArchiveBuilder {
 		}
 	}
 	
-	// Takes a string and converts it to Title Case
-	public static String toTitleCase(String text) {
-		if (text.equals("")) {
-			return text;
+	// Reads a set of ratings from file as the archive ratings.
+	// File must have ALL labels included, even non-custom ones!
+	public static void setRatings(File ratingsList) {
+		try {
+			Scanner ratingsReader = new Scanner(ratingsList);
+			// Used when building chapter pages
+			try {
+				ratingLevelG = ratingsReader.nextLine();
+				ratingLevelPG = ratingsReader.nextLine();
+				ratingLevelT = ratingsReader.nextLine();
+				ratingLevelM = ratingsReader.nextLine();
+				ratingLevelE = ratingsReader.nextLine();
+				ratingLevelNR = ratingsReader.nextLine();
+			} catch (NoSuchElementException e) {
+				System.out.println("Error: reached the end of the ratings file too early. Make sure all ratings are accounted for!");
+				ratingsReader.close();
+				return; // stop trying to read the file
+			}
+			ratingsReader.close();
+		} catch (FileNotFoundException e) {
+			System.out.println("Error: tried to read the ratings file, but it could not be found.");
+			e.printStackTrace();
 		}
-		StringBuilder titleBuilder = new StringBuilder();
-		boolean atStartOfWord = true;
-		char c = ' ';
-		for (int i = 0; i < text.length(); i++) {
-			c = text.charAt(i);
-			// Check that c is actually a letter! 64-91 is caps, 96-123 is lower
-			if (atStartOfWord && (c > 64 && c < 91) || (c > 96 && c < 123)) {
-				titleBuilder.append(Character.toUpperCase(c));
-				atStartOfWord = false;
-			}
-			else {
-				titleBuilder.append(c);
-			}
-			if (c == ' ' || c == '\t' || c == '.') {
-				atStartOfWord = true;
-			}
-		}
-		return titleBuilder.toString();
 	}
 	
 	// SOON TO BE DEPRECATED
@@ -1089,7 +1187,7 @@ public class FicArchiveBuilder {
 			indexOfStories = indexOfStories.concat(stories[i].getStoryInfo());
 		}
 		if (!listingNav.equals("")) { // only create this if there's something to put in it
-			listingNav = workIndexNavigationTemplate.replace("{C}", listingNav);
+			listingNav = workIndexNavigationTemplate.replace("{C}", listingNav).replace("{L}", "Navigation");
 		}
 		return new String[] {listingNav, "Stories by " + comparator.toString(), indexOfStories};
 	}
@@ -1139,7 +1237,7 @@ public class FicArchiveBuilder {
 		}
 		String listingNavString = "";
 		if (!listingNav.equals("")) { // only create this if there's something to put in it
-			listingNavString = workIndexNavigationTemplate.replace("{C}", listingNav.toString());
+			listingNavString = workIndexNavigationTemplate.replace("{C}", listingNav.toString()).replace("{L}", "Navigation");;
 		}
 		return new String[] {listingNavString, categoryName, categoryIndex.toString()};
 	}	
@@ -1156,7 +1254,7 @@ public class FicArchiveBuilder {
 		for (String category : map.keySet()) {
 			categorySubfolder = new File(categoryFolder, toSafeURL(category));
 			categorySubfolder.mkdirs();
-			String[] pages = buildCategoryPages(categoryFolder.getName() + "/", toTitleCase(category), map.get(category), (titleLabel + category));
+			String[] pages = buildCategoryPages(categoryFolder.getName() + "/", category, map.get(category), (titleLabel + toTitleCase(category)));
 			if (verbose) {
 				System.out.println("Created " + pages.length + " page[s] for category " + category);
 			}
@@ -1178,7 +1276,7 @@ public class FicArchiveBuilder {
 			totalPages++;
 		}
 		if (verbose) {
-			System.out.println("Total pages that should be generated: " + totalPages);
+			System.out.println("Total pages that should be generated for " + category + ": " + totalPages);
 		}
 		String[] pageStrings = new String[totalPages]; // array to store the pages
 		StringBuilder pageOutput; // for building each page
@@ -1196,12 +1294,11 @@ public class FicArchiveBuilder {
 				// add the infobox for each story tagged on that page
 				pageOutput.append(relatedStories.get((i * maxItemsPerPage) + j).getStoryInfo());
 			}
-			//TODO: change this to allow custom prev/next button labels
 			// Set pagination. Since we only generate up to the second-to-last page, there is always a next button.
-			nextPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i+2) + ".html\">Next</a>";
+			nextPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i+2) + ".html\">" + nextPageLabel + "</a>";
 			prevPage = "";
 			if (i > 0) {
-				prevPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i) + ".html\">Previous</a>";
+				prevPage = "<a href=\"" + sitePath + categoryFolderURL + toSafeURL(category) + "/" + (i) + ".html\">" + prevPageLabel + "</a>";
 			}
 			// Generate pagination buttons from template
 			pageOutput.append(paginationTemplate.replace("{Next}", nextPage).replace("{Previous}", prevPage));
@@ -1245,38 +1342,6 @@ public class FicArchiveBuilder {
 			storiesArrayList.add(story);
 		}
 		return buildCategoryPages(categoryFolderURL, category, storiesArrayList, label);
-	}
-	
-	// Converts potentially unsafe input strings (like story tags) into strings
-	// that are safe for URLs. Unsafe characters are replaced with "_##" where
-	// "##" is the int value of the character.
-	public static String toSafeURL(String s) {
-		StringBuilder url = new StringBuilder();
-		int c = 0;
-		for (int i = 0; i < s.length(); i++) {
-			c = s.charAt(i); // get the int value of the ith character
-			// 32 = space
-			if (c == 32) {
-				url.append('-');
-			}
-			// 45 = '-', 95 = '_', 48-57 = digits 0-9, 65-90 = A-Z, 97-122 = a-z
-			else if (!((c > 96 && c < 123) || (c > 64 && c < 91) || (c > 47 && c < 58))) {
-				url.append("_" + c);
-			}
-			else {
-				url.append(s.charAt(i));
-			}
-		}
-		return url.toString();
-	}
-	
-	// Removes a leading "the" (and puts stuff into all lowercase) for comparison
-	public static String stripLeadingThe(String s) {
-		s = s.toLowerCase();
-		if (s.startsWith("the ")) {
-			s = s.replace("the ", "");
-		}
-		return s;
 	}
 	
 	// Gets the total wordcount of the entire archive
@@ -1385,6 +1450,16 @@ public class FicArchiveBuilder {
 		return fieldTemplate;
 	}
 	
+	// Returns the chapter pagination template.
+	public static String getTagTemplate() {
+		return tagTemplate;
+	}
+	
+	// Returns the chapter pagination template.
+	public static String getTagLastTemplate() {
+		return tagLastTemplate;
+	}
+	
 	// Gets the previous chapter button label
 	public static String getPrevChapterLabel() {
 		return prevChapterButton;
@@ -1448,6 +1523,29 @@ public class FicArchiveBuilder {
 	// Gets the label for the tags field
 	public static String getTagsLabel() {
 		return tagsLabel;
+	}
+	
+	// Gets the label for the tags field
+	public static String getRatingLabel() {
+		return ratingLabel;
+	}
+	
+	// Gets a string for the give Rating
+	public static String getRatingString(Rating r) {
+		switch (r) {
+			case G:
+				return ratingLevelG;
+			case PG:
+				return ratingLevelPG;
+			case TEEN:
+				return ratingLevelT;
+			case MATURE:
+				return ratingLevelM;
+			case EXPLICIT:
+				return ratingLevelE;
+			default:
+				return ratingLevelNR;
+		}
 	}
 	
 	// Returns the site folder path for the website this archive will be placed in

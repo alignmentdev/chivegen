@@ -158,7 +158,7 @@ public class Story {
 									wordcount = -1;
 								}
 							}
-							else if (currentLineData[0].equals("rating")) {
+							else if (currentLineData[0].equals("rating") || currentLineData[0].equals("rated")) {
 								// Interpret the rating as a Rating enum value
 								String r = currentLineData[1].toLowerCase();
 								if (r.equals("g") || r.equals("k")) {
@@ -173,7 +173,7 @@ public class Story {
 								else if (r.equals("m") || r.equals("ma") || r.equals("mature")) {
 									storyRating = Rating.MATURE;
 								}
-								else if (r.equals("e") || r.equals("x") || r.equals("explicit")) {
+								else if (r.equals("e") || r.equals("x") || r.equals("nc-17") || r.equals("explicit")) {
 									storyRating = Rating.EXPLICIT;
 								}
 							}
@@ -380,8 +380,10 @@ public class Story {
 	
 	// Creates HashMap of fields and content for a story infobox.
 	public HashMap<String, String> createStoryInfoBoxHashMap() {
+		// Get the URL for linking to this story
 		String url = (FicArchiveBuilder.getSitePath() + "stories/" + storyOutputFolder.getName() + "/" + chapters[0].getName().replace(".txt", ".html"));
 		String titleLink = "<a href=\"" + url + "\">" + storyTitle + "</a>";
+		// Put Yes/No for Completion Status based on isComplete
 		String completionStatus = "No";
 		if (isComplete) {
 			completionStatus = "Yes";
@@ -391,18 +393,19 @@ public class Story {
 		if (FicArchiveBuilder.generateInfoBoxTemplateFields()) {
 			String field = FicArchiveBuilder.getFieldTemplate(); // since this will be reused a lot
 			storyPageData = new String[] {titleLink, buildField(field, FicArchiveBuilder.getFandomLabel(), fandom), 
-			buildField(field, FicArchiveBuilder.getWordcountLabel(), numberWithCommas(wordcount)), 
+			buildField(field, FicArchiveBuilder.getWordcountLabel(), FicArchiveBuilder.numberWithCommas(wordcount)), 
 			buildField(field, FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
 			buildField(field, FicArchiveBuilder.getDatePublishedLabel(), datePublished), 
 			buildField(field, FicArchiveBuilder.getDateUpdatedLabel(), dateUpdated), 
 			buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
 			buildField(field, FicArchiveBuilder.getCompletionLabel(), completionStatus), 
 			buildField(FicArchiveBuilder.getByLine(), FicArchiveBuilder.getAuthorLabel(), author),
-			buildField(field, FicArchiveBuilder.getTagsLabel(), getFormattedTags())};
+			buildField(field, FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
+			buildField(field, FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
 		}
 		else {
 			storyPageData = new String[] {titleLink, fandom, Integer.toString(wordcount), Integer.toString(chapters.length),
-			datePublished, dateUpdated, summary, completionStatus, author, getFormattedTags()};
+			datePublished, dateUpdated, summary, completionStatus, author, getFormattedTags(), FicArchiveBuilder.getRatingString(storyRating)};
 		}
 		return FicArchiveBuilder.generateHashMapFromArrays(FicArchiveBuilder.getStoryInfoKeywords(), storyPageData);
 	}
@@ -479,34 +482,14 @@ public class Story {
 				}
 				// Create the formatted tag and link
 				if (i == (storyTags.length - 1)) { // last tag has special class for CSS usage
-					tagList.append("<div class=\"tag last\"><a href=\"" + tagURL + "\">" + storyTags[i] + "</a></div>");
+					tagList.append(FicArchiveBuilder.getTagLastTemplate().replace("{C}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
 				}
 				else {
-					tagList.append("<div class=\"tag\"><a href=\"" + tagURL + "\">" + storyTags[i] + "</a></div>");
+					tagList.append(FicArchiveBuilder.getTagTemplate().replace("{C}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
 				}
 			}
 		}
 		return tagList.toString();
-	}
-	
-	// Formats the wordcount as a String with commas (i.e. 1,234,567)
-	public String numberWithCommas(int n) {
-		StringBuilder numberWithCommas = new StringBuilder();
-		int magnitude = 1;
-		int chunks = -1; // last 3 digits don't count as a chunk
-		// How many comma-separated "chunks" the number can broken into
-		while (n / magnitude >= 1) {
-			chunks++;
-			magnitude *= 1000; // assume western-style 3-digit chunks
-		}
-		int currentChunk = 0;
-		for (int i = chunks; i > 0; i--) {
-			currentChunk = (n - (n % (1000^i))); // get the next chunk of digits as an int
-			n = n - currentChunk; // remove it from n
-			// Add to string the current chunk, without trailing zeroes, and then a comma
-			numberWithCommas.append(Integer.toString(currentChunk  / (1000^i)) + ",");
-		}
-		return numberWithCommas.append(Integer.toString(n)).toString();
 	}
 	
 	// Gets the tags array
@@ -550,27 +533,6 @@ public class Story {
 	// Gets the rating enum
 	public Rating getRating() {
 		return storyRating;
-	}
-	
-	// Gets a string for the rating
-	// (Note: modify this later to allow custom ratings?)
-	public String getRatingString() {
-		switch (storyRating) {
-			case UNRATED: 
-				return "No Rating";
-			case G:
-				return "G";
-			case PG:
-				return "PG";
-			case TEEN:
-				return "Teen";
-			case MATURE:
-				return "Mature";
-			case EXPLICIT:
-				return "Explicit";
-			default:
-				return "No Rating"; // just in case
-		}
 	}
 	
 	public String toString() {
