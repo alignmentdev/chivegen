@@ -1,0 +1,244 @@
+HOW TO USE CHIVEGEN (v0.2.6)
+  
+INPUT DIRECTORY
+At bare minimum, you will need one input directory, with the following:
+	- A template.html file, which will be your standard page template for all pages of the archive
+	- A folder for each story you want in your archive
+		- For each chapter, a file called "ch###.txt", where "###" is the chapter number, e.g. "ch001.txt", "ch002.txt", etc.
+For a better functioning, nicer archive, you should also add:
+	- In story folders:
+		- A file called "storyinfo.txt", with information about the story in question (see STORYINFO.TXT - RECOGNIZED FIELDS)
+		- Optionally, a file called "toc.txt" with the titles of the story's chapters. You do not need to number these.
+	- A file "index.txt", which contains the text of your homepage. (News, stats widgets, etc.)
+For some customization of your site's style, you may also want to add other templating files to the root of your input directory, as specified under "INPUT FILENAMES FOR CUSTOM TEMPLATES."
+
+
+STORYINFO.TXT - RECOGNIZED FIELDS & ASSOCIATED INFOBOX TEMPLATE FIELDS
+For further information about template fields, see TEMPLATING FIELDS FOR CUSTOM TEMPLATES.
+Title: 														{StoryTitle}
+Summary: 													{Summary}
+Notes: 														{StoryNotes}
+	Notes are not displayed in the infobox, but as part of the first chapter's page -- see CHAPTER TEMPLATE FIELDS.
+Fandom: 													{Fandom}
+Author: / Creator: 											{Author}
+Published: / Date Published: / Posted: / Date Posted: 		{Published}
+Updated: / Date Updated:									{Updated}
+	Note that dates must be formatted in ISO formated, i.e. YYYY-MM-DD, to be recognized.
+Tags: / Characters: 										{Tags}
+Words: / Length: 											{Wordcount}
+Complete:													{IsComplete}
+	"Yes" and "True" = Complete; anything else defaults to Incomplete.
+Rating: / Rating:											{Rating}
+	Quick table of ratings, for reference
+	Input									Internal Name		Default Label
+	"G" or "K"								Rating.G			"G"
+	"PG" or "K+"							Rating.PG			"PG"
+	"T" or "Teen"							Rating.TEEN			"T"
+	"M" or "Ma" or "Mature"					Rating.MATURE		"MA"
+	"E" or "X" or "NC-17" or "Explicit"		Rating.EXPLICIT		"E"
+	Anything else, or nothing				Rating.UNRATED		"Not Rated"
+	
+
+DEFAULT PAGES
+"index.html"		The homepage of your archive. Contains content from "index.txt" if included.
+"by_author.html"	An alphabetical index of all authors in the archive.
+"by_fandom.html"	An alphabetical index of all fandoms in the archive.
+"by_title.html"		An alphabetical index of works.
+"/latest/"			Paginated index of all stories by latest date updated.
+"/fandoms/"			Folders for each fandom in the archive, with paginated indexes of all stories in those fandoms.
+"/authors/"			Folders for each author in the archive, with paginated indexes of all stories by those authors.
+"/tags"/			Folders for each tag used in the archive, with paginated indexes of all stories with that tag.
+"/stories/"			Folders for each individual story, with chapters and table of contents.
+		
+
+INPUT FILENAMES FOR CUSTOM TEMPLATES
+"template.html"				Page template. Required.
+"infobox.txt"				Story infobox template.
+"fields.txt"				Basic infobox field template.
+"summaries.txt"				Summary/notes field template.
+"chapter.txt"				Chapter page template.
+"stories_by.txt"			Story index template.
+
+OTHER INPUT
+"labels.txt"				Custom field labels. (See: TO SET ALTERNATIVE FIELD LABELS)
+"ratings.txt"				Custom story ratings. (See: STORYINFO.TXT - RECOGNIZED FIELDS)
+
+
+CASUAL HTML AND HOW TO USE IT
+
+Casual HTML basically fills in line break and paragraph tags for you, but leaves any existing HTML alone.
+It also detects lines that begin either with paragraph tags, or with certain non-paragraph tags such as <div> and <img>, and does not put unnecessary paragraph tags around them.
+
+The full list of starting strings that will prevent automatic formatting is: "<br>", "<br/>", "<hr>", "<h", "</", "<div", "<img", "<ifra", "<bloc", "<ta", "<tr", "<td", "<th", and "<nope". The last entry, "<nope>", is specific to ChiveGen and meant to serve as a catchall for "don't format this".
+
+
+TEMPLATING FIELDS FOR CUSTOM TEMPLATES
+Note: due to how ChiveGen parses templates, most template fields MUST be placed on their own line in the file.
+For example:
+	<h1>
+	{Title}
+	</h1>
+is okay, but
+	<h1>{Title}</h1>
+is not, and will not work.
+
+The exception is for internal field templates and pagination templates, which use a different insertion method. See DEFAULT INTERNAL TEMPLATES for better reference.
+					
+STANDARD PAGE TEMPLATE FIELDS
+File: "template.html"
+{Title}				Page title (as in, the one that appears on the label of the browser tab.)
+{Main}				Content inserted into the main body of the page.
+{Footer}			An automated footer. Optional. Default content is "[site name] | Powered by ChiveGen [version number]".
+
+INFOBOX TEMPLATE FIELDS
+File: "infobox.txt"
+{StoryTitle}		Story title.
+{Summary}			Story summary. Uses the summary field template.
+{Fandom}			Story fandom(s). Uses the standard field template.
+{Author}			Story author. Uses either the standard field template or the byline template, depending on user settings.
+{Published}			Date published. Uses the standard field template.
+{Updated}			Date updated. Uses the standard field template.
+{Tags}				Story tags. Uses a standard field template, plus extra formatting of <div class=tag></div> and <div class="tag last"></div> on individual tags.
+{Wordcount}			Story wordcount. Uses standard field template.
+{IsComplete}		Completion status. Uses standard field template.
+{Rating}			Story rating. Uses standard field template.
+		
+CHAPTER TEMPLATE FIELDS
+File: "chapter.txt"
+{StoryInfo}			The story infobox
+{ChapterTitle}		The chapter title
+{StoryNotes}		Notes, derived from the notes field from storyinfo.txt
+{ChapterBody}		Main text of the chapter.
+{TopPagination}		The "Previous Chapter" / "Next Chapter" buttons.
+{BottomPagination}	Duplicate of the above, to allow chapter navigation at both top and bottom of page.
+
+PAGINATION TEMPLATE FIELDS
+Separate from chapter pagination.
+File: "pagination.txt"
+{Previous}			Direct link to previous page
+{JumpPrev}			Jump pagination links to previous pages
+{JumpCurrent}		Jump pagination for current page (not a link.)
+{JumpNext}			Jump pagination links for next pages.
+{Next}				Direct link to next page
+
+CHAPTER PAGINATION TEMPLATE FIELDS
+File: "chapternav.txt"
+{Previous}			Link to previous page/chapter
+{Next}				Link to next page/chapter
+
+STORY INDEX TEMPLATE FIELDS
+File: "stories_by.txt"
+{Navigation}		Quick links to groupings on the page. Uses the Story Index Navigation template.
+{ListingTitle}		Title of whatever the listing is (i.e. "Stories tagged X", "All Authors", etc.)
+{CurrentlyShowing}	The "Showing [starting number]-[ending number] of [total]" text, e.g. "Showing 1-10 of 22".
+{Listings}			Entries, either in story infoxes, of lists of things like authors/fandoms/etc., plus pagination buttons.
+
+INFOBOX INTERNAL FIELDS (SUMMARY TEMPLATE, FIELD TEMPLATE, BYLINE TEMPLATE, STORY INDEX NAVIGATION, TAGS, ETC.)
+Files: "fields.txt", "summaries.txt"
+{L}					Label (if applicable)
+{C}					Content
+
+STATS WIDGET TEMPLATE FIELDS
+File: "index.txt"
+{StoryNumber}		Total number of stories in the archive.
+{TotalWordcount}	Total combined wordcount of all stories in the archive.	
+{FandomNumber}		Total number of fandoms across all stories in archive.
+{AuthorNumber}		Total number of authors across al stories in archive.
+
+
+TO SET ALTERNATIVE FIELD LABELS
+Include a file in input called "labels.txt".
+You will need replacement labels for ALL FIELDS, in the order given below. 
+If you don't want to change a field's label, just put its default.
+
+CUSTOMIZABLE FIELD LABELS AND DEFAULTS
+Label for...						Default
+Next Page button					"Next Page"
+Previous Page button				"Previous Page"
+Next Chapter button					"Next Chapter"
+Previous Chapter button				"Previous Chapter"
+Table of Contents button			"Table of Contents"
+Fandom field						"Fandom"
+Date Updated field					"Updated"
+Date Published field				"Published"
+Wordcount field						"Words"
+Number of Chapters field			"Chapters"
+Is/Is not complete field			"Complete"
+Summary field label					"Summary"
+Notes field label					"Notes"
+
+CUSTOM RATINGS
+Rating								Default
+G									"G"
+PG									"PG"
+Teen								"T"
+Mature								"MA"
+Explicit/NC-17						"E"
+No rating							"No Rating"
+		
+	
+DEFAULT INTERNAL TEMPLATES
+
+Default Story Infobox Template:
+<div class=storyinfo>
+<h2>
+{StoryTitle}
+</h2>
+{Fandom}
+{Wordcount}
+{Chapters}
+{Published}
+{Updated}
+{Summary}
+</div>
+
+Default Infobox Field Template:
+{L}: {C}
+
+Default Summary/Notes Field Template:
+{L}: {C}
+
+Default Byline Template:
+by {C}
+
+Default Chapter Template:
+{StoryInfo} 
+<div class="chapter-nav top-nav"><a href="toc.html">Table of Contents</a>
+{TopPagination}
+</div> 
+<h3>
+{ChapterTitle}
+</h3> 
+<div class=notes>
+{StoryNotes}
+</div>
+{ChapterBody}
+<div class="chapter-nav bottom-nav">
+{BottomPagination}
+</div>
+
+Default Pagination Template
+<div class=pagination>
+{Previous}
+{JumpPrev}
+{JumpCurrent}
+{JumpNext}
+{Next}
+</div>
+
+Default Chapter Pagination Template:
+<div class=chapter-pagination>{Previous}
+{Next}</div>
+
+Default Story Index Template:
+{Navigation}
+<h1>
+{ListingTitle}
+</h1><h2>
+{CurrentlyShowing}
+</h2><div class=listings>
+{Listings}
+</div>
+
+Default Story Index Navigation Template:
+<div class=listingnav>{C}</div>

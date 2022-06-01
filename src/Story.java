@@ -1,5 +1,7 @@
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.time.*;
 import java.time.format.*;
 
@@ -28,8 +30,6 @@ public class Story {
 	private String storyNotes = "";
 	// These strings are used for display purposes only right now
 	// and may be deprecated later
-	private String datePublished = "";
-	private String dateUpdated = "";
 	// The actual dates, if possible to parse. Input file should use ISO format.
 	private LocalDate updated; 
 	private LocalDate published;
@@ -44,10 +44,13 @@ public class Story {
 	private Rating storyRating = Rating.UNRATED;
 	// In case no storyinfo.txt file is found
 	private boolean hasStoryDataFile = false;
-	// In case one or both dates in storyinfo.txt are missing, incorrectly formatted 
+	// In case fields in storyinfo.txt are missing, incorrectly formatted 
 	// or otherwise can't be used
 	private boolean hasDateUpdated = false;
 	private boolean hasDatePublished = false;
+	private boolean hasFandom = false;
+	private boolean hasCompletionStatus = false;
+	private boolean hasAuthor = false;
 	// If there are no tags...
 	private boolean hasTags = false;
 	// The story infobox, so we don't have to constantly generate it for new pages.
@@ -125,10 +128,12 @@ public class Story {
 							}
 							else if (currentLineData[0].equals("fandom")) {
 								fandom = currentLineData[1];
+								hasFandom = true;
 							}
 							else if (currentLineData[0].equals("author") || currentLineData[0].equals("creator")) {
 								author = currentLineData[1];
 								FicArchiveBuilder.setHasAuthors(true);
+								hasAuthor = true;
 							}
 							else if (currentLineData[0].equals("summary")) {
 								// Since the summary and notes templates are very short 
@@ -190,25 +195,24 @@ public class Story {
 										isComplete = false;
 									}
 								}
+								hasCompletionStatus = true;
 							}
 							else if (currentLineData[0].equals("updated") || currentLineData.equals("date updated")) {
-								dateUpdated = currentLineData[1];
 								try {
 									updated = LocalDate.parse(currentLineData[1].replaceAll("\\s", "")); //strip whitespace just in case
 									hasDateUpdated = true;
 								} catch (DateTimeParseException e) {
-									System.out.println("Error in update date for story '" + inputFolder.getName() + "': date input must be in ISO format (YYYY-MM-DD).");
+									printInvalidDateWarning("updated");
 									hasDateUpdated = false;
 								}
 							}
 							else if (currentLineData[0].equals("published") || currentLineData[0].equals("posted") ||
 							currentLineData[0].equals("date published") || currentLineData[0].equals("date posted")) {
-								datePublished = currentLineData[1];
 								try {
 									published = LocalDate.parse(currentLineData[1].replaceAll("\\s", ""));
 									hasDatePublished = true;
 								} catch (DateTimeParseException e) {
-									System.out.println("Error in pub date for story '" + inputFolder.getName() + "': date input must be in ISO format (YYYY-MM-DD).");
+									printInvalidDateWarning("published");
 									hasDatePublished = false;
 								}
 							}
@@ -227,47 +231,99 @@ public class Story {
 			System.out.println("Warning: storyinfo.txt not found for story folder " + inputFolder.getPath());
 		}
 		// Fill out story data with default values if missing
-		// Summary, date updated, and notes are acceptable to skip.
 		if (!hasStoryDataFile || storyTitle.equals("")) {
 			storyTitle = inputFolder.getName();
 		}
-		if (!FicArchiveBuilder.skipEmptyFields() && (!hasStoryDataFile || fandom.equals(""))) {
-			fandom = "Unknown Fandom";
-		}
-		if (!FicArchiveBuilder.skipEmptyFields() && (!hasStoryDataFile || datePublished.equals(""))) {
-			datePublished = "Undated";
-		}
-		if (!hasStoryDataFile || dateUpdated.equals("")) {
-			if (!FicArchiveBuilder.skipEmptyFields()) {
-				dateUpdated = "";
-			}
-			else {
-				dateUpdated = "Undated";
-			}
-		}
-		if (!hasDatePublished || !hasStoryDataFile) {	
-			published = LocalDate.of(1970, 1, 1); // placeholder data
-		}
-		if (!hasDateUpdated || !hasStoryDataFile) {
-			updated = published;
-		}
+		// Summary and notes are acceptable to skip by default.
 		if (!hasStoryDataFile || summary.equals("")) {
 			summary = "";
 		}
 		if (!hasStoryDataFile || storyNotes.equals("")) {
 			storyNotes = "";
 		}
+		// Placholder is used for sorting purposes
+		if (!hasFandom) {
+			if (FicArchiveBuilder.isVerbose()) {
+				System.out.println("Autofilling fandom...");
+			}
+			fandom = "No Fandom Given";
+		}
+		if (!hasAuthor) {
+			if (FicArchiveBuilder.isVerbose()) {
+				System.out.println("Autofilling author...");
+			}
+			author = "Unknown Author";
+		}
+		// If any date info is missing, fill it in
+		if (!hasDateUpdated || !hasDatePublished) {
+			if (FicArchiveBuilder.isVerbose()) {
+				System.out.println("Autofilling dates...");
+			}
+			if (FicArchiveBuilder.defaultToEpochDate()) {
+				if (!hasDatePublished) {
+					published = LocalDate.EPOCH;
+				}
+				if (!hasDateUpdated && chapters.length > 1) {
+					// Get update date if it's not a oneshot
+					updated = LocalDate.EPOCH;
+				}
+				else if (!hasDateUpdated) {
+					// Otherwise just use the pub date
+					updated = published;
+				}
+			}
+			else {
+				// use metadata from input folder
+				setDatesFromMetadata(inputFolder);
+			}
+		}
 		// If no valid wordcount is supplied in file, get it manually
 		if (wordcount == -1) {
 			wordcount = countWords();
 		}
-		if (hasDateUpdated) { // so we can implement custom formatting for dates later if so desired
-			dateUpdated = updated.toString();
-		}
-		if (hasDatePublished) {
-			datePublished = published.toString();
-		}
+		// Generate the story infobox.
 		storyInfo = getStoryInfo();
+	}
+	
+	// Gets the date string. If defaultDate is true, the date was autofilled
+	// from metadata or another default like 1970-01-01.
+	public String getDateString(LocalDate date, boolean notDefaultDate) {
+		if (notDefaultDate || ((FicArchiveBuilder.showDefaultDates() && !FicArchiveBuilder.skipEmptyFields()))) {
+			return date.toString();
+		}
+		if (FicArchiveBuilder.skipEmptyFields()) {
+			return "";
+		}
+		return "Undated";
+	}
+	
+	public String getDateString(LocalDate date) {
+		return getDateString(date, true);
+	}
+	
+	// Gets dates from the file attributes, if no dates are given
+	// Published and created should be potentially different dates, but this
+	// doesn't seem to work currently. Might be a Linux issue?
+	public void setDatesFromMetadata(File inputStoryFolder) {
+		try {
+			BasicFileAttributes storyFolderAttributes = Files.readAttributes(Paths.get(inputStoryFolder.getPath()), BasicFileAttributes.class);
+			if (!hasDatePublished) {
+				published = LocalDate.ofInstant(storyFolderAttributes.creationTime().toInstant(), ZoneId.systemDefault());
+			}
+			if (!hasDateUpdated && chapters.length > 1) {
+				// If there's multiple chapters and no date updated, use the folder's Last Modified date
+				updated = LocalDate.ofInstant(storyFolderAttributes.lastModifiedTime().toInstant(), ZoneId.systemDefault());
+			}
+			else if (!hasDateUpdated) {
+				// Otherwise, if it's a oneshot with no valid update date, use the publication date
+				updated = published;
+			}
+		} catch(IOException e) {
+			System.out.println("Error: tried to get date-time data from folder '" + inputStoryFolder.getPath() + "' but something went wrong.");
+			updated = LocalDate.of(1970, 1, 1); // fallback
+			published = LocalDate.of(1970, 1, 1);
+			e.printStackTrace();
+		}
 	}
 	
 	// Reads through all chapter files to get a total story wordcount.
@@ -388,24 +444,25 @@ public class Story {
 		if (isComplete) {
 			completionStatus = "Yes";
 		}
-		// Fields: title (link), fandom, wordcount, chapter #, published, updated, summary, completion status
+		// Fields: title (link), fandom, wordcount, chapter #, published, updated, summary, completion status, author, tags, rating
 		String[] storyPageData;
 		if (FicArchiveBuilder.generateInfoBoxTemplateFields()) {
 			String field = FicArchiveBuilder.getFieldTemplate(); // since this will be reused a lot
-			storyPageData = new String[] {titleLink, buildField(field, FicArchiveBuilder.getFandomLabel(), fandom), 
+			storyPageData = new String[] {titleLink, buildField(field, FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
 			buildField(field, FicArchiveBuilder.getWordcountLabel(), FicArchiveBuilder.numberWithCommas(wordcount)), 
 			buildField(field, FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
-			buildField(field, FicArchiveBuilder.getDatePublishedLabel(), datePublished), 
-			buildField(field, FicArchiveBuilder.getDateUpdatedLabel(), dateUpdated), 
+			buildField(field, FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)), 
+			buildField(field, FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
 			buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
-			buildField(field, FicArchiveBuilder.getCompletionLabel(), completionStatus), 
-			buildField(FicArchiveBuilder.getByLine(), FicArchiveBuilder.getAuthorLabel(), author),
+			buildField(field, FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
+			buildField(FicArchiveBuilder.getByLine(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
 			buildField(field, FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
 			buildField(field, FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
 		}
 		else {
-			storyPageData = new String[] {titleLink, fandom, Integer.toString(wordcount), Integer.toString(chapters.length),
-			datePublished, dateUpdated, summary, completionStatus, author, getFormattedTags(), FicArchiveBuilder.getRatingString(storyRating)};
+			storyPageData = new String[] {titleLink, getSkippableFandom(), Integer.toString(wordcount), Integer.toString(chapters.length),
+			getDateString(published, hasDatePublished), getDateString(updated, hasDateUpdated), summary, getSkippableCompletionStatus(), getSkippableAuthor(), getFormattedTags(), 
+			FicArchiveBuilder.getRatingString(storyRating)};
 		}
 		return FicArchiveBuilder.generateHashMapFromArrays(FicArchiveBuilder.getStoryInfoKeywords(), storyPageData);
 	}
@@ -452,8 +509,7 @@ public class Story {
 		if (chapterNumber < chapters.length - 1) {
 			next = "<a href=\"" + getChapterURL(chapterNumber+1) + "\">" + FicArchiveBuilder.getNextChapterLabel() + "</a>";
 		}
-		// This is small enough regex is probably fine
-		return FicArchiveBuilder.getPaginationTemplate().replace("{Previous}", previous).replace("{Next}", next);
+		return FicArchiveBuilder.getChapterPaginationTemplate().replace("{Next}", next).replace("{Previous}", previous);
 	}
 	
 	// Use replace() to quickly insert data into certain short templated fields
@@ -524,10 +580,7 @@ public class Story {
 	
 	// Gets the date updated, or failing that, the date published.
 	public LocalDate getDateUpdated() {
-		if (hasDateUpdated) {
-			return updated;
-		}
-		return published;
+		return updated;
 	}
 	
 	// Gets the rating enum
@@ -535,10 +588,51 @@ public class Story {
 		return storyRating;
 	}
 	
+	// Basic toString() method.
 	public String toString() {
 		if (storyTitle.equals("")) {
 			return storyOutputFolder.getName();
 		}
 		return storyTitle;
+	}
+	
+	// Gets either the fandom, or (if none was given and we're skipping blank
+	// fields) a blank string.
+	private String getSkippableFandom() {
+		if (!hasFandom && FicArchiveBuilder.skipEmptyFields()) {
+			return "";
+		}
+		return fandom;
+	}
+	
+	// Same as getSkippableFandom(), but for the author field.
+	private String getSkippableAuthor() {
+		if (!hasAuthor && FicArchiveBuilder.skipEmptyFields()) {
+			return "";
+		}
+		return author;
+	}
+	
+	// Same as getSkippableFandom(), but with completion status field.
+	private String getSkippableCompletionStatus() {
+		if (!hasCompletionStatus && FicArchiveBuilder.skipEmptyFields()) {
+			return "";
+		}
+		// Get completion statuses from FicArchiveBuilder's settings
+		return FicArchiveBuilder.getCompletionStatusString(isComplete);
+	}
+	
+	// For printing a warning when a date in storyinfo.txt is invalid.
+	public void printInvalidDateWarning(String dateField) {
+		System.out.println("Warning: invalid date " + dateField + " for story '" + 
+		storyTitle + "' (date input must be in ISO format (YYYY-MM-DD).)");
+		System.out.print("Default fallback (" );
+		if (FicArchiveBuilder.defaultToEpochDate()) {
+			System.out.print("1970-01-01");
+		}
+		else {
+			System.out.print("folder creation and/or last modified dates from metadata");
+		}
+		System.out.println(") will be used instead.");
 	}
 }

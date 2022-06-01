@@ -1,4 +1,32 @@
 CHANGELOG
+
+	2022 June 1
+		- Changed version to 0.2.7
+		- Added ability to choose if automated dates should be generated from
+		  folder data, or use the generic epoch placeholder (1970-01-01)
+		- Removed date strings. Date strings are now generated from LocalDate
+		  using a method that either returns the date's toString(), a blank string,
+		  or "Undated", depending on whether the original date was valid and various
+		  FicArchiveBuilder settings. This is called in generateStoryInfoBox().
+		- Made a function for printing to 'invalid date' warning, since it's
+		  multiple lines of code that don't need to be duplicated.
+		- Fixed issues with the skip-empty-fields option that broke index page
+		  generation.
+		- Added customizable completion status strings. (Default is "Yes" / "No".)
+		- Added placeholder for author if none is given.
+		- Made slightly more helpful error messages when bad arguments are given.
+		- Changed time report at the end to be in seconds instead of milliseconds.
+
+	2022 May 30
+		- Added ability to generate a date from the input folder metadata.
+		- Added option to automatically generate date strings from LocalDate.
+		  (Previously this was only done if the date was invalid.)
+
+	2022 May 28
+		- Changed code to actually use the insert-into-template method for
+		  pagination (except for chapter pagination, which now has its own
+		  template.)
+		- Added jump pagination on index pages, plus an option to disable it.
 	
 	2022 May 26, Part 2
 		- Moved numberWithCommas() from Story.java to FicArchiveBuilder.java
