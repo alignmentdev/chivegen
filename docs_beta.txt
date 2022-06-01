@@ -8,7 +8,7 @@ At bare minimum, you will need one input directory, with the following:
 For a better functioning, nicer archive, you should also add:
 	- In story folders:
 		- A file called "storyinfo.txt", with information about the story in question (see STORYINFO.TXT - RECOGNIZED FIELDS)
-		- Optionally, a file called "toc.txt" with the titles of the story's chapters. You do not need to number these.
+		- Optionally, a file called "toc.txt" with the titles of the story's chapters. You do not need to number the titles. They will be applied in order automatically.
 	- A file "index.txt", which contains the text of your homepage. (News, stats widgets, etc.)
 For some customization of your site's style, you may also want to add other templating files to the root of your input directory, as specified under "INPUT FILENAMES FOR CUSTOM TEMPLATES."
 
@@ -61,7 +61,8 @@ INPUT FILENAMES FOR CUSTOM TEMPLATES
 
 OTHER INPUT
 "labels.txt"				Custom field labels. (See: TO SET ALTERNATIVE FIELD LABELS)
-"ratings.txt"				Custom story ratings. (See: STORYINFO.TXT - RECOGNIZED FIELDS)
+"ratings.txt"				Custom story ratings. (See: STORYINFO.TXT - RECOGNIZED FIELDS and CUSTOM RATINGS)
+"completion.txt"			Custom completion status text. (See: CUSTOM COMPLETION STATUSES)
 
 
 CASUAL HTML AND HOW TO USE IT
@@ -175,6 +176,11 @@ Teen								"T"
 Mature								"MA"
 Explicit/NC-17						"E"
 No rating							"No Rating"
+
+CUSTOM COMPLETION STATUSES
+Status								Default
+Complete							"Yes"
+Incomplete							"No"
 		
 	
 DEFAULT INTERNAL TEMPLATES
