@@ -444,16 +444,16 @@ public class Story {
 		//String[] storyPageData;
 		if (FicArchiveBuilder.generateInfoBoxTemplateFields()) {
 			String field = FicArchiveBuilder.getFieldTemplate(); // since this will be reused a lot
-			return new String[] {titleLink, buildField(field, FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
-			buildField(field, FicArchiveBuilder.getWordcountLabel(), FicArchiveBuilder.numberWithCommas(wordcount)), 
-			buildField(field, FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
-			buildField(field, FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)), 
-			buildField(field, FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
+			return new String[] {titleLink, buildField(FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
+			buildField(FicArchiveBuilder.getWordcountLabel(), FicArchiveBuilder.numberWithCommas(wordcount)), 
+			buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
+			buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)), 
+			buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
 			buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
-			buildField(field, FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
+			buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
 			buildField(FicArchiveBuilder.getByLine(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
-			buildField(field, FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
-			buildField(field, FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
+			buildField(FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
+			buildField(FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
 		}
 		return new String[] {titleLink, getSkippableFandom(), Integer.toString(wordcount), Integer.toString(chapters.length),
 		getDateString(published, hasDatePublished), getDateString(updated, hasDateUpdated), summary, getSkippableCompletionStatus(), getSkippableAuthor(), getFormattedTags(), 
@@ -475,10 +475,10 @@ public class Story {
 		else if (chapters.length != 1) {
 			chapterTitle = chapterTitles[chapterNumber];
 		}		
-		// Story infobox, chapter title, story notes, chapter file input, end notes, pagination x2
+		// Story infobox, chapter title, story notes, chapter file input, end notes, pagination
 		return new String[] {getStoryInfo(), chapterTitle, getFormattedStoryNotes(chapterNumber), 
 		FicArchiveBuilder.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), 
-		getFormattedEndNotes(chapterNumber), chapterPagination, chapterPagination};
+		getFormattedEndNotes(chapterNumber), chapterPagination};
 	}
 	
 	// Gets story notes, but only for the first chapter
@@ -512,7 +512,7 @@ public class Story {
 		if (chapterNumber < chapters.length - 1) {
 			next = "<a href=\"" + getChapterURL(chapterNumber+1) + "\">" + FicArchiveBuilder.getNextChapterLabel() + "</a>";
 		}
-		return FicArchiveBuilder.getChapterPaginationTemplate().replace("{Next}", next).replace("{Previous}", previous);
+		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getChapterPaginationContentTemplate(), new String[] {previous, next});
 	}
 	
 	// Use replace() to quickly insert data into certain short templated fields
@@ -527,6 +527,13 @@ public class Story {
 			return field.replace("{C}", content).replace("{L}", label);
 		}
 		return content; // if content is blank, don't create a formatted field
+	}
+	
+	public String buildField(String label, String content) {
+		if (content.equals("")) {
+			return "";
+		}
+		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getFieldContentTemplate(), new String[] {label, content});
 	}
 	
 	// Gets the tags in order, with formatting (not currently templated)

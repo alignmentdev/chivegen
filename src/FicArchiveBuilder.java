@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import java.io.*;
 import java.time.*;
 import java.time.format.*;
+import java.lang.Math;
 
 public class FicArchiveBuilder {
 	// Version string for manual and about text
@@ -50,10 +51,12 @@ public class FicArchiveBuilder {
 	private static String[] standardKeywords = new String[] {"Title", "Main", "Footer"};
 	private static String[] storyInfoKeywords = new String[] {"StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
 	"Summary", "IsComplete", "Author", "Tags", "Rating"};
-	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterBody", "EndNotes", "TopPagination", "BottomPagination"};
-	private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};	// not currently used
+	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterBody", "EndNotes", "Pagination"};
+	private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
+	private static String[] chapterPaginationKeywords = new String[] {"Previous", "Next"};
 	private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings"};	
 	private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber"};	
+	private static String[] fieldKeywords = new String[] {"L", "C"};
 	
 	// The template objects
 	private static ContentTemplate pageContentTemplate;
@@ -61,6 +64,8 @@ public class FicArchiveBuilder {
 	private static ContentTemplate chapterContentTemplate;
 	private static ContentTemplate workIndexContentTemplate;
 	private static ContentTemplate paginationContentTemplate;
+	private static ContentTemplate chapterPaginationContentTemplate;
+	private static ContentTemplate fieldContentTemplate;
 	
 	
 	/***
@@ -117,10 +122,10 @@ public class FicArchiveBuilder {
 	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{StoryTitle}\n</h2>\n" +
 		"{Fandom}\n{Wordcount}\n{Chapters}\n{Published}\n{Updated}\n{Summary}\n</div>");
 	private static String chapterTemplate = ("{StoryInfo}\n" + 
-		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{TopPagination}\n</div>\n" + 
+		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{Pagination}\n</div>\n" + 
 		"<h3>\n{ChapterTitle}\n</h3>\n"  + 
 		"<div class=notes>\n{StoryNotes}\n</div>\n" +
-		"{ChapterBody}\n<div class=notes>\n{EndNotes}\n</div><div class=\"chapter-nav bottom-nav\">\n{BottomPagination}\n</div>");
+		"{ChapterBody}\n<div class=notes>\n{EndNotes}\n</div><div class=\"chapter-nav bottom-nav\">\n{Pagination}\n</div>");
 	private static String chapterPaginationTemplate = "<div class=chapter-pagination>\n{Previous}\n{Next}\n</div>";
 	private static String paginationTemplate = "<div class=pagination>\n{Previous}\n{JumpPrev}\n{JumpCurrent}\n{JumpNext}\n{Next}\n</div>";
 	private static String workIndexTemplate = "{Navigation}\n<h1>\n{ListingTitle}\n</h1><h2>\n{CurrentlyShowing}\n</h2><div class=listings>\n{Listings}\n</div>";
@@ -378,6 +383,15 @@ public class FicArchiveBuilder {
 				System.out.println("Reading pagination template...");
 			}
 			paginationContentTemplate = buildTemplate(paginationTemplate, paginationKeywords);
+			if (!brief) {
+				System.out.println("Reading chapter pagination template...");
+			}
+			chapterPaginationContentTemplate = buildTemplate(chapterPaginationTemplate, chapterPaginationKeywords);
+			if (!brief) {
+				System.out.println("Reading field template...");
+			}
+			fieldContentTemplate = buildTemplate(fieldTemplate, fieldKeywords);
+			
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
 				output.mkdirs();
@@ -842,7 +856,7 @@ public class FicArchiveBuilder {
 		HashMap<String, Integer> keywordMap = generateHashMapFromArray(keywords);
 		// For the ContentTemplate constructor
 		ArrayList<String> strings = new ArrayList<String>();
-		int[] insertPoints = new int[keywords.length];
+		ArrayList<Integer> insertPoints2 = new ArrayList<Integer>();
 		// To track in case some keywords aren't found
 		boolean[] foundKeywords = new boolean[keywords.length];
 		for (int i = 0; i < foundKeywords.length; i++) {
@@ -856,8 +870,6 @@ public class FicArchiveBuilder {
 		String possibleKeyword;
 		// For the current chunk of text
 		String current;
-		// For tracking the order of entries in insertPoints
-		int sectionNumber = 0;
 		// Use {} delimiters
 		templateReader.useDelimiter(templateDelimiters);
 		// Whether or not we're checking the current chunk for a keyword
@@ -868,17 +880,15 @@ public class FicArchiveBuilder {
 		}
 		while (templateReader.hasNext()) {
 			current = templateReader.next();
-			if (inKeyword) {				
+			if (inKeyword) {
 				possibleKeyword = current.replaceAll("\\s", ""); // strip spaces
 				//System.out.println("Checking: " + possibleKeyword);
 				// Check if keyset contains the keyword
 				if (keywordMap.keySet().contains(possibleKeyword)) {
 					// Note the insertion point from the hashmap
-					insertPoints[keywordMap.get(possibleKeyword)] = sectionNumber;
+					insertPoints2.add(keywordMap.get(possibleKeyword));
 					// Note that we have found this keyword
 					foundKeywords[keywordMap.get(possibleKeyword)] = true;
-					// Increment the section number
-					sectionNumber++;
 					// Add the accumulated string to the template
 					strings.add(currentSection.toString());
 					// Reset the string builder
@@ -906,64 +916,48 @@ public class FicArchiveBuilder {
 		for (int i = 0; i < foundKeywords.length; i++) {
 			if (foundKeywords[i] == false) {
 				System.out.println("Warning: keyword " + keywords[i] + " was not found in the file.");
-				insertPoints[i] = -1;
+				insertPoints2.add(-1);
 			}
 		}
 		if (verbose) {
-			System.out.println("Insertion points: " + Arrays.toString(insertPoints));
+			System.out.println("Insertion points: " + insertPoints2);
 		}
-		return new ContentTemplate(strings, insertPoints);
-	}
-	
-	// Put the strings in contentToInsert in order based on the ints in insertPoints
-	public static String[] orderContentStrings(String[] contentToInsert, int[] insertPoints) {
-		if (contentToInsert.length != insertPoints.length) {
-			System.out.println("Error: content and insertion points arrays must be the same length.");
-			return new String[]{""};
-		}
-		String[] contentInOrder = new String[contentToInsert.length];
-		for (int i = 0; i < contentToInsert.length; i++) {
-			contentInOrder[i] = ""; // to prevent null entries
-		}
-		for (int i = 0; i < insertPoints.length; i++) {
-			if (insertPoints[i] > -1) { // only use valid indexes
-				contentInOrder[insertPoints[i]] = contentToInsert[i];
-			}
-		}
-		return contentInOrder;
+		return new ContentTemplate(strings, insertPoints2);
 	}
 	
 	// Write Strings into a template from the ContentTemplate object
 	public static String writeIntoTemplate(ContentTemplate contentTemplate, String[] contentToInsert) {
-		if (contentTemplate.getTemplateStrings().size() < 1) { // don't bother for blank template
+		if (contentTemplate.getTemplateStrings().length < 1) { // don't bother for blank template
 			return "";
 		}
 		StringBuilder content = new StringBuilder();
-		contentToInsert = orderContentStrings(contentToInsert, contentTemplate.getInsertionPoints());
+		// So we don't have to keep getting copies of these objects
+		String[] templateStringArr = contentTemplate.getTemplateStrings();
+		int[] templateInsertPoints = contentTemplate.getInsertionPoints();
 		// if there's nothing to insert, return the full text of the template
 		if (contentToInsert.length < 1) { 
-			for (int i = 0; i < contentTemplate.getTemplateStrings().size(); i++) {
-				content.append(contentTemplate.getTemplateStrings().get(i));
+			for (int i = 0; i < templateStringArr.length; i++) {
+				content.append(templateStringArr[i]);
 			}
 			return content.toString();
 		}
-		ArrayList<String> stringArr = contentTemplate.getTemplateStrings(); // use a regular array once i figure out how to do that
 		// Interleave the template strings and content to insert
-		for (int i = 0; i < stringArr.size() - 1; i++) {
+		for (int i = 0; i < templateStringArr.length - 1; i++) {
 			if (verbose) {
-				System.out.println("Template line: " + stringArr.get(i));
+				System.out.println("Template line: " + templateStringArr[i]);
 				System.out.println("Input line: " + contentToInsert[i]);
 			}
-			content.append(stringArr.get(i));
-			content.append(contentToInsert[i]);
+			content.append(templateStringArr[i]);
+			if (templateInsertPoints[i] != -1) {
+				content.append(contentToInsert[templateInsertPoints[i]]);
+			}
 		}
 		// If there's more in the template, add the last string
-		if (stringArr.size() > contentToInsert.length) {
-			content.append(stringArr.get(stringArr.size() - 1));
+		if (templateStringArr.length > contentToInsert.length) {
+			content.append(templateStringArr[(templateStringArr.length - 1)]);
 		}
 		return content.toString();
 	}
-	
 	
 	// Accepts a string array and returns a HashSet of those values.
 	// Mostly deprecated, but keeping it around for generating the html tag hashset.
@@ -1050,12 +1044,6 @@ public class FicArchiveBuilder {
 		if (useCasualHTML) { // if using casual HTML, just run it through the converter
 			return convertToHTML(fileContents.toString());
 		}
-		/*long end = System.currentTimeMillis();
-		System.out.print("Time to read file ");
-		if (useCasualHTML) {
-			System.out.print("(with casual HTML)");
-		}
-		System.out.println(": " + (end - start) + "ms");*/
 		return fileContents.toString();
 	}
 	
@@ -1206,13 +1194,24 @@ public class FicArchiveBuilder {
 			magnitude *= 1000; // assume western-style 3-digit chunks
 		}
 		int currentChunk = 0;
-		for (int i = chunks; i > 0; i--) {
-			currentChunk = (n - (n % (1000^i))); // get the next chunk of digits as an int
+		for (int i = chunks; i >= 0; i--) {
+			currentChunk = (n - (n % (int)Math.pow(1000, i))); // get the next chunk of digits as an int
+			if (i != chunks) { //dont do this the first time
+				if (currentChunk < 100) {
+					numberWithCommas.append(0);
+				}
+				if (currentChunk < 10) {
+					numberWithCommas.append(0);
+				}
+			}
 			n = n - currentChunk; // remove it from n
 			// Add to string the current chunk, without trailing zeroes, and then a comma
-			numberWithCommas.append(Integer.toString(currentChunk  / (1000^i)) + ",");
+			numberWithCommas.append(Integer.toString(currentChunk  / (int)Math.pow(1000, i)));
+			if (i != 0) {
+				numberWithCommas.append(",");
+			}
 		}
-		return numberWithCommas.append(Integer.toString(n)).toString();
+		return numberWithCommas.toString();
 	}
 	
 	// Takes a string and converts it to Title Case
@@ -1388,7 +1387,9 @@ public class FicArchiveBuilder {
 				new File(categorySubfolder, (i+1) + ".html")); // page URLs start at 1
 			}
 		}
-		System.out.println("Created " + map.keySet().size() + " category folder[s] for " + categoryLabel);
+		if (!brief) {
+			System.out.println("Created " + map.keySet().size() + " category folder[s] for " + categoryLabel);
+		}
 	}
 	
 	// Create a string array for all pages of all works with a particular tag
@@ -1588,6 +1589,16 @@ public class FicArchiveBuilder {
 	// Returns the generic jump pagination template.
 	public static ContentTemplate getPaginationTemplate() {
 		return paginationContentTemplate;
+	}
+	
+	// Returns the chapter pagination template.
+	public static ContentTemplate getChapterPaginationContentTemplate() {
+		return chapterPaginationContentTemplate;
+	}
+	
+	// Returns the field template
+	public static ContentTemplate getFieldContentTemplate() {
+		return fieldContentTemplate;
 	}
 	
 	// Returns the story summary template

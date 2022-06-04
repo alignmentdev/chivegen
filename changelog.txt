@@ -1,5 +1,14 @@
 CHANGELOG
 
+	2022 June 4
+		- Continued removal of old code.
+		- Changed template insertion/reading system slightly, again. Now template
+		  keywords can be used multiple times in a single template.
+		- Major fix to numberToCommas() method, which turned out to be very broken
+		  because I am not clever and forgot that ^ wasn't exponent in Java.
+		  Now the numbers should be accurate, and actually have commas in the
+		  right places.
+		  
 	2022 June 3
 		- Changed version to 0.2.8
 		- Introduced an entirely overhauled template system using a new 

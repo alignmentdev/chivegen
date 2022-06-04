@@ -8,19 +8,26 @@ A class for string/page templates.
 
 public class ContentTemplate {
 	// Strings that make up the template
-	private ArrayList<String> templateStrings;
+	private String[] templateStrings;
 	// Order in which content should be inserted
 	private int[] insertionPoints;
 	
-	public ContentTemplate(ArrayList<String> strings, int[] inserts) {
-		templateStrings = strings;
-		insertionPoints = inserts;
+	// Constructor	
+	public ContentTemplate(ArrayList<String> strings, ArrayList<Integer> inserts) {
+		templateStrings = new String[strings.size()];
+		templateStrings = strings.toArray(templateStrings);
+		insertionPoints = new int[inserts.size()];
+		// Since we can't convert directly from ArrayList<Integer> to int[], we
+		// have to do this manually.
+		for (int i = 0; i < insertionPoints.length; i++) {
+			insertionPoints[i] = inserts.get(i);
+		}
 	}
 	
-	public ArrayList<String> getTemplateStrings() {
+	public String[] getTemplateStrings() {
 		return templateStrings;
 	}
-	
+		
 	public int[] getInsertionPoints() {
 		return insertionPoints;
 	}
