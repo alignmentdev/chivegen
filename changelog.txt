@@ -1,5 +1,24 @@
 CHANGELOG
 
+	2022 June 3
+		- Changed version to 0.2.8
+		- Introduced an entirely overhauled template system using a new 
+		  ContentTemplate class, a different way of building templates, and a 
+		  different (simpler and faster) way of writing into templates.
+		- Templates should also be able to have keywords without needing extra
+		  newlines everywhere. They will also be faster to build and use.
+		- Changed keyword formatting in keyword arrays for new method.
+		- Modified the readFileToString() method to use a faster approach with
+		  a special non-printing-character delimiter (7, BEL) when we don't need
+		  to read line-by-line for HTML converting or added tabs.
+		- Put regex import back in since it's now used for template parsing and 
+		  file reading.
+		- Began removal/cleanup of old template methods and related code.
+
+	2022 June 2
+		- Shortened the max tag length for HTML tag checking in Casual HTML mode 
+		  to 3.
+
 	2022 June 1
 		- Changed version to 0.2.7
 		- Added ability to choose if automated dates should be generated from
@@ -16,6 +35,14 @@ CHANGELOG
 		- Added placeholder for author if none is given.
 		- Made slightly more helpful error messages when bad arguments are given.
 		- Changed time report at the end to be in seconds instead of milliseconds.
+		- Improved docs slightly.
+		- Added new commands to manual, and tried to clarify some of the existing
+		  options.
+		- Removed extraneous SortByStory classes, since we only use the comparators.
+		- Author and Fandom fields now link to their pages in the infobox if the
+		  relevant pages and index exist.
+		- Added --skip-author-index option to argument parsing. Apparently it was
+		  not actually implemented. Oops.
 
 	2022 May 30
 		- Added ability to generate a date from the input folder metadata.
