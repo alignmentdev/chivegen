@@ -1,5 +1,22 @@
 CHANGELOG
 
+	2022 June 4, Part 2
+		- Fixed new issue of {} delimiters breaking in-page CSS. Template
+		  keywords are now written {{Like This}} to avoid this issue.
+		- Fixed a bug in writeIntoTemplate() where missing keywords would cause
+		  some template lines to not be appended and some template placeholders
+		  to not be replaced.
+		- Added "<li", "<ul", and "<ol" to the list of HTML opening tags that
+		  will not be messed with in casual HTML mode.
+		- Standard fields, byline, and chapter pagination now use the template 
+		  system instead of replace() to insert content
+		- Added parsing for an End Notes field in storyinfo.txt, added an 
+		  endNotes String and getFormattedEndNotes() to Story, and added 
+		  EndNotes to chapter keywords and templating.
+		- Removed maxTitleLength option, since it's not actually used anymore.
+		- Added author and tags labels to setFieldLabels input.
+		- Updated docs_beta.txt to reflect various changes and fix a few typos.
+
 	2022 June 4
 		- Continued removal of old code.
 		- Changed template insertion/reading system slightly, again. Now template

@@ -451,7 +451,7 @@ public class Story {
 			buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
 			buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
 			buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
-			buildField(FicArchiveBuilder.getByLine(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
+			buildField(FicArchiveBuilder.getByLineTemplate(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
 			buildField(FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
 			buildField(FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
 		}
@@ -524,7 +524,7 @@ public class Story {
 		if (!content.equals("")) {
 			// Replace {C} first since it's typically later in the string
 			// so searching for {L} won't take as long
-			return field.replace("{C}", content).replace("{L}", label);
+			return field.replace("{{C}}", content).replace("{{L}}", label);
 		}
 		return content; // if content is blank, don't create a formatted field
 	}
@@ -534,6 +534,14 @@ public class Story {
 			return "";
 		}
 		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getFieldContentTemplate(), new String[] {label, content});
+	}
+	
+	// For nonstandard fields like author, summary, etc
+	public String buildField(ContentTemplate field, String label, String content) {
+		if (content.equals("")) {
+			return "";
+		}
+		return FicArchiveBuilder.writeIntoTemplate(field, new String[] {label, content});
 	}
 	
 	// Gets the tags in order, with formatting (not currently templated)

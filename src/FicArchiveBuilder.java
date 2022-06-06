@@ -40,10 +40,11 @@ public class FicArchiveBuilder {
 	// Used for HTML converter formatting	
 	private static HashSet<String> nonParagraphHTMLTags;
 	// In order: line break, horizontal line, heading, end of a tag, div, image, 
-	// iframe, blockquote, table, table row, table data, table heading.
-	// {!} can be used to tell ChiveGen to ignore a line for formatting
+	// list item, unordered list, ordered list, iframe, blockquote, table, 
+	// table row, table data, table heading.
+	// <no></no> can be used to tell ChiveGen to ignore a line for formatting
 	// regardless of what else it starts with
-	private static String[] acceptedOpeningHTMLTags = new String[] {"<br", "<hr", "<h", "</", "<di", "<im", 
+	private static String[] acceptedOpeningHTMLTags = new String[] {"<br", "<hr", "<h", "</", "<di", "<im", "<li", "<ul", "<ol",
 	"<if", "<bl", "<ta", "<tr", "<td", "<th", "<no"};
 	
 	
@@ -66,6 +67,7 @@ public class FicArchiveBuilder {
 	private static ContentTemplate paginationContentTemplate;
 	private static ContentTemplate chapterPaginationContentTemplate;
 	private static ContentTemplate fieldContentTemplate;
+	private static ContentTemplate byLineContentTemplate;
 	
 	
 	/***
@@ -119,19 +121,19 @@ public class FicArchiveBuilder {
 	Default templates for other page elements. These are overridden if an 
 	appropriate file exists.
 	***/
-	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{StoryTitle}\n</h2>\n" +
-		"{Fandom}\n{Wordcount}\n{Chapters}\n{Published}\n{Updated}\n{Summary}\n</div>");
-	private static String chapterTemplate = ("{StoryInfo}\n" + 
-		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{Pagination}\n</div>\n" + 
-		"<h3>\n{ChapterTitle}\n</h3>\n"  + 
-		"<div class=notes>\n{StoryNotes}\n</div>\n" +
-		"{ChapterBody}\n<div class=notes>\n{EndNotes}\n</div><div class=\"chapter-nav bottom-nav\">\n{Pagination}\n</div>");
-	private static String chapterPaginationTemplate = "<div class=chapter-pagination>\n{Previous}\n{Next}\n</div>";
-	private static String paginationTemplate = "<div class=pagination>\n{Previous}\n{JumpPrev}\n{JumpCurrent}\n{JumpNext}\n{Next}\n</div>";
-	private static String workIndexTemplate = "{Navigation}\n<h1>\n{ListingTitle}\n</h1><h2>\n{CurrentlyShowing}\n</h2><div class=listings>\n{Listings}\n</div>";
-	private static String summaryTemplate = "{L}: {C}";
-	private static String fieldTemplate = "{L}: {C}";
-	private static String byLineTemplate = " by {C}";
+	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{{StoryTitle}}\n</h2>\n" +
+		"{{Fandom}}\n{{Wordcount}}\n{{Chapters}}\n{{Published}}\n{{Updated}}\n{{Summary}}\n</div>");
+	private static String chapterTemplate = ("{{StoryInfo}}\n" + 
+		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{{Pagination}}\n</div>\n" + 
+		"<h3>\n{{ChapterTitle}}\n</h3>\n"  + 
+		"<div class=notes>\n{{StoryNotes}}\n</div>\n" +
+		"{{ChapterBody}}\n<div class=notes>\n{{EndNotes}}\n</div><div class=\"chapter-nav bottom-nav\">\n{{Pagination}}\n</div>");
+	private static String chapterPaginationTemplate = "<div class=chapter-pagination>\n{{Previous}}\n{{Next}}\n</div>";
+	private static String paginationTemplate = "<div class=pagination>\n{{Previous}}\n{{JumpPrev}}\n{{JumpCurrent}}\n{{JumpNext}}\n{{Next}}\n</div>";
+	private static String workIndexTemplate = "{{Navigation}}\n<h1>\n{{ListingTitle}}\n</h1><h2>\n{{CurrentlyShowing}}\n</h2><div class=listings>\n{{Listings}}\n</div>";
+	private static String fieldTemplate = "{{L}}: {{C}}";
+	private static String summaryTemplate = fieldTemplate;
+	private static String byLineTemplate = " by {{C}}";
 	private static String workIndexNavigationTemplate = "<div class=listingnav>{C}</div>";
 	private static String tagTemplate = "<div class=tag>{C}</div>";
 	private static String tagLastTemplate = "<div class=\"tag last\">{C}</div>";
@@ -139,7 +141,8 @@ public class FicArchiveBuilder {
 	/***
 	For template and file reading.
 	***/
-	private static Pattern templateDelimiters = Pattern.compile("[\\{\\}]");
+	// match {{ or }} only
+	private static Pattern templateDelimiters = Pattern.compile("\\{\\{|\\}\\}");
 	// The BEL character (char = 7), being an old teletype-related character, should not 
 	// ever appear in any actual file or text, so it makes a good delimiter
 	// for scanning the whole file in as few loops as possible.
@@ -178,9 +181,6 @@ public class FicArchiveBuilder {
 	// Ignore a leading "The" when sorting by title, fandom, etc
 	// E.g. if true, sorting by title puts "The Cask of Amontillado" before "Romeo and Juliet"
 	private static boolean ignoreLeadingThe = false;
-	// Maximum character length if the page title is just a preview of page text.
-	// DEPRECATED
-	private static int maxTitleLength = 25;
 	// Don't generate jump pagination (i.e. links to specific pages)
 	private static boolean skipJumpPagination;
 	// Don't bother trying to make the tab level match when adding output text to file
@@ -391,6 +391,13 @@ public class FicArchiveBuilder {
 				System.out.println("Reading field template...");
 			}
 			fieldContentTemplate = buildTemplate(fieldTemplate, fieldKeywords);
+			// Dont bother unless we're actually using the byline
+			if (useByLine) {
+				if (!brief) {
+					System.out.println("Reading byline template...");
+				}
+				byLineContentTemplate = buildTemplate(byLineTemplate, fieldKeywords);
+			}
 			
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
@@ -662,24 +669,6 @@ public class FicArchiveBuilder {
 					i++;
 				}
 			}
-			else if (args[i].equals("-mt") || args[i].equals("-max-title")) {
-				if (i == args.length - 1) {
-					System.out.println("Error: argument " + args[i] + " was given, but no number was supplied.");
-				}
-				else {
-					try {
-						maxTitleLength = Integer.parseInt(args[i+1]);
-						if (maxTitleLength < 1) {
-							System.out.println("Error: maximum title length must be at least 1 character.");
-							maxTitleLength = 1;
-						}
-					} catch (IllegalArgumentException e) {
-						System.out.println("Error: '" + args[i+1] + "' is not an integer.");
-						maxTitleLength = 25;
-					}
-					i++;
-				}
-			}
 			else if (args[i].equals("-v") || args[i].equals("--verbose")) {
 				verbose = true;
 				brief = false;
@@ -773,12 +762,14 @@ public class FicArchiveBuilder {
 				prevChapterButton = labelReader.nextLine();
 				tocButton = labelReader.nextLine();
 				fandomLabel = labelReader.nextLine();
+				authorLabel = labelReader.nextLine();
 				updatedLabel = labelReader.nextLine();
 				publishedLabel = labelReader.nextLine();
 				wordcountLabel = labelReader.nextLine();
 				chapterCountLabel = labelReader.nextLine();
 				completionLabel = labelReader.nextLine();
 				summaryLabel = labelReader.nextLine();
+				tagsLabel = labelReader.nextLine();
 				notesLabel = labelReader.nextLine();
 				endNotesLabel = labelReader.nextLine();
 			} catch (NoSuchElementException e) {
@@ -875,7 +866,7 @@ public class FicArchiveBuilder {
 		// Whether or not we're checking the current chunk for a keyword
 		boolean inKeyword = false;
 		// In case we start with a keyword
-		if (templateInput.startsWith("{")) {
+		if (templateInput.startsWith("{{")) {
 			inKeyword = true;
 		}
 		while (templateReader.hasNext()) {
@@ -942,19 +933,19 @@ public class FicArchiveBuilder {
 			return content.toString();
 		}
 		// Interleave the template strings and content to insert
-		for (int i = 0; i < templateStringArr.length - 1; i++) {
+		for (int i = 0; i < templateStringArr.length; i++) {
 			if (verbose) {
 				System.out.println("Template line: " + templateStringArr[i]);
-				System.out.println("Input line: " + contentToInsert[i]);
+				if (i < templateInsertPoints.length) {
+					System.out.println("Input line index: " + templateInsertPoints[i]);
+				}
 			}
 			content.append(templateStringArr[i]);
-			if (templateInsertPoints[i] != -1) {
+			// If i is in tIP's range, and the value isn't -1 (not found)
+			// insert the input string
+			if (i < templateInsertPoints.length && templateInsertPoints[i] != -1) {
 				content.append(contentToInsert[templateInsertPoints[i]]);
 			}
-		}
-		// If there's more in the template, add the last string
-		if (templateStringArr.length > contentToInsert.length) {
-			content.append(templateStringArr[(templateStringArr.length - 1)]);
 		}
 		return content.toString();
 	}
@@ -1601,6 +1592,13 @@ public class FicArchiveBuilder {
 		return fieldContentTemplate;
 	}
 	
+	public static ContentTemplate getByLineTemplate() {
+		if (useByLine) {
+			return byLineContentTemplate;
+		}
+		return fieldContentTemplate;
+	}
+	
 	// Returns the story summary template
 	// This is also used for story and chapter notes
 	public static String getSummaryTemplate() {
@@ -1619,6 +1617,7 @@ public class FicArchiveBuilder {
 	
 	// Gets the template used for author bylines.
 	// If useByLine is false, this returns the standard field template.
+	// TO BE DEPRECATED
 	public static String getByLine() {
 		if (useByLine) {
 			return byLineTemplate;
