@@ -1,5 +1,9 @@
 CHANGELOG
 
+	2022 June 6
+		- Added author and tags labels to setFieldLabels input.
+		- Updated docs_beta.txt to reflect various changes and fix a few typos.
+
 	2022 June 4, Part 2
 		- Fixed new issue of {} delimiters breaking in-page CSS. Template
 		  keywords are now written {{Like This}} to avoid this issue.
@@ -14,8 +18,6 @@ CHANGELOG
 		  endNotes String and getFormattedEndNotes() to Story, and added 
 		  EndNotes to chapter keywords and templating.
 		- Removed maxTitleLength option, since it's not actually used anymore.
-		- Added author and tags labels to setFieldLabels input.
-		- Updated docs_beta.txt to reflect various changes and fix a few typos.
 
 	2022 June 4
 		- Continued removal of old code.
