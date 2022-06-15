@@ -2,7 +2,7 @@ HOW TO USE CHIVEGEN (v0.2.8)
   
 INPUT DIRECTORY
 At bare minimum, you will need one input directory, with the following:
-	- A template.html file, which will be your standard page template for all pages of the archive
+	- A template.html file, which will be your standard page template for all pages of the archive. This should either have a <style> section for in-page CSS, or link your site stylesheet.
 	- A folder for each story you want in your archive
 		- For each chapter, a file called "ch###.txt", where "###" is the chapter number, e.g. "ch001.txt", "ch002.txt", etc.
 For a better functioning, nicer archive, you should also add:
@@ -27,7 +27,7 @@ Updated: / Date Updated:									{{Updated}}
 Tags: / Characters: 										{{Tags}}
 Words: / Length: 											{{Wordcount}}
 Complete:													{{IsComplete}}
-	"Yes" and "True" = Complete; anything else defaults to Incomplete.
+	"Yes" and "True" = Complete; anything else (including no data) defaults to Incomplete.
 Rating: / Rating:											{{Rating}}
 	Quick table of ratings, for reference
 	Input									Internal Name		Default Label
@@ -115,7 +115,7 @@ File: "pagination.txt"
 {{Next}}				Direct link to next page
 
 CHAPTER PAGINATION TEMPLATE FIELDS
-File: "chapternav.txt"
+File: "chapterpagination.txt"
 {{Previous}}			Link to previous page/chapter
 {{Next}}				Link to next page/chapter
 
@@ -127,7 +127,7 @@ File: "stories_by.txt"
 {{Listings}}			Entries, either in story infoxes, of lists of things like authors/fandoms/etc., plus pagination buttons.
 
 INFOBOX INTERNAL FIELDS (SUMMARY TEMPLATE, FIELD TEMPLATE, BYLINE TEMPLATE, STORY INDEX NAVIGATION, TAGS, ETC.)
-Files: "fields.txt", "summaries.txt"
+Files: "fields.txt", "summaries.txt", "byline.txt"
 {{L}}					Label (if applicable)
 {{C}}					Content
 
@@ -242,3 +242,9 @@ Default Story Index Template:
 
 Default Story Index Navigation Template:
 <div class=listingnav>{{C}}</div>
+
+Default Page Title Template:
+{T} - {S}
+
+Default Footer Template:
+{S} | Powered by ChiveGen [current version number]

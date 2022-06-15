@@ -312,6 +312,13 @@ public class FicArchiveBuilder {
 				}
 				chapterTemplate = readFileToString(chapterTemplateFile);
 			}
+			File chapterNavTemplateFile = new File(input, "chapterpagination.txt");
+			if (chapterNavTemplateFile.exists()) {
+				if (verbose) {
+					System.out.println("Chapter pagination template found in input directory.");
+				}
+				chapterPaginationTemplate = readFileToString(chapterNavTemplateFile);
+			}
 			File summaryTemplateFile = new File(input, "summaries.txt");
 			if (summaryTemplateFile.exists()) {
 				if (verbose) {
@@ -406,7 +413,7 @@ public class FicArchiveBuilder {
 			// Create a standard page footer
 			standardFooter = buildPageFooter();
 			// And title template
-			titleBase = buildPageTitleBase();
+			titleBase = buildPageTitleBase(siteName);
 			try {
 				// Make sure the input and template files exist, just in case.
 				if (!input.exists() || !templateFile.exists()) {
@@ -1273,10 +1280,16 @@ public class FicArchiveBuilder {
 		if (siteName.equals("") && title.equals("")) {
 			return subtitle;
 		}
-		if (subtitle.equals("")) {
+		if (subtitle.equals("")) { // title is not blank if it reaches this point
 			return buildPageTitle(title);
 		}
-		return titleTemplate.replace("{S}", buildPageTitle(subtitle)).replace("{T}", title);
+		if (title.equals("")) { // title is not blank if it reaches this point
+			return buildPageTitle(subtitle);
+		}
+		if (siteName.equals("")) {
+			return buildPageTitleBase(subtitle).replace("{T}", title);
+		}
+		return titleBase.replace("{T}", buildPageTitleBase(subtitle).replace("{T}", title));
 	}
 	
 	// Used recursively to build page titles
@@ -1288,11 +1301,11 @@ public class FicArchiveBuilder {
 	}
 	
 	// Build page title base
-	public static String buildPageTitleBase() {
-		if (siteName.equals("")) {
+	public static String buildPageTitleBase(String title) {
+		if (title.equals("")) {
 			return "";
 		}
-		return titleTemplate.replace("{S}", siteName);
+		return titleTemplate.replace("{S}", title);
 	}
 	
 	public static String buildPageFooter() {

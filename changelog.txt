@@ -1,8 +1,17 @@
 CHANGELOG
 
+	June 9
+		- Fixed bug that caused visible gaps in title structure for 
+		  single-chapter works.
+		- Implemented reading in of a chapter pagination template from file.
+
 	2022 June 6
 		- Added author and tags labels to setFieldLabels input.
 		- Updated docs_beta.txt to reflect various changes and fix a few typos.
+		- Modified buildField() methods to return the content string if no label
+		  is supplied... unless the field template is the byline content template,
+		  in which case insertion proceeds as normal. This needs to be tested
+		  though.
 
 	2022 June 4, Part 2
 		- Fixed new issue of {} delimiters breaking in-page CSS. Template
@@ -18,6 +27,8 @@ CHANGELOG
 		  endNotes String and getFormattedEndNotes() to Story, and added 
 		  EndNotes to chapter keywords and templating.
 		- Removed maxTitleLength option, since it's not actually used anymore.
+		- Summary and other replace() using fields now use double braces instead
+		  of single, for consistency.
 
 	2022 June 4
 		- Continued removal of old code.

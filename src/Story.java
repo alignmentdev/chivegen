@@ -529,17 +529,25 @@ public class Story {
 		return content; // if content is blank, don't create a formatted field
 	}
 	
+	// Builds a field using the generic fieldContentTemplate template.
 	public String buildField(String label, String content) {
 		if (content.equals("")) {
 			return "";
 		}
+		if (label.equals("")) { // for fields with no label string
+			return content;
+		}
 		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getFieldContentTemplate(), new String[] {label, content});
 	}
 	
-	// For nonstandard fields like author, summary, etc
+	// For fields like author, summary, etc that use other templates
 	public String buildField(ContentTemplate field, String label, String content) {
 		if (content.equals("")) {
 			return "";
+		}
+		// TODO: check this to make sure it actually works
+		else if (label.equals("") && !field.equals(FicArchiveBuilder.getByLineTemplate())) {
+			return content;
 		}
 		return FicArchiveBuilder.writeIntoTemplate(field, new String[] {label, content});
 	}
