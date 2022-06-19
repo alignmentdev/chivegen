@@ -1,0 +1,3 @@
+ChiveGen (c) alignmentDev 2022
+
+ChiveGen is not currently released under any license, but you are free to download and use it to generate websites, so long as you give credit and link back to this repository.
