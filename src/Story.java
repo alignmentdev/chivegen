@@ -53,8 +53,9 @@ public class Story {
 	private boolean hasAuthor = false;
 	// If there are no tags...
 	private boolean hasTags = false;
-	// The story infobox, so we don't have to constantly generate it for new pages.
+	// The story infoboxes, so we don't have to constantly generate them for new pages.
 	private String storyInfo = "";
+	private String indexStoryInfo = "";
 
 	public Story(File inputFolder, File outputFolder) {
 		// Set output folder with same name as input, but in output path
@@ -288,6 +289,7 @@ public class Story {
 		// Generate the story infobox.
 		if (chapters.length > 0) {
 			storyInfo = buildStoryInfoBox();
+			indexStoryInfo = buildIndexStoryInfoBox();
 		}	
 	}
 	
@@ -407,22 +409,33 @@ public class Story {
 		String chapterString = FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getChapterTemplate(), createChapterContentArray(chapterNumber));
 		String pageTitle = "";
 		if (chapters.length > 1) { // Skip chapter title if only 1 chapter exists
-			pageTitle = "Chapter " + (chapterNumber+1) + ": " + chapterTitles[chapterNumber];
+			pageTitle = getFormattedChapterTitle(chapterNumber);
 		}
 		// Get the full string for the output webpage
 		return FicArchiveBuilder.buildStandardPageString(chapterString, 
 		FicArchiveBuilder.buildPageTitle(pageTitle, storyTitle));
 	}
 		
-	// Gets the prebuilt story info box, complete with link.
+	// Gets the prebuilt story info box for chapter pages.
 	public String getStoryInfo() {
 		return storyInfo;
+	}	
+	
+	// Gets the prebuilt story infobox for index listings, complete with link.
+	public String getInfoboxForIndex() {
+		return indexStoryInfo;
 	}	
 	
 	// Builds a string for the story infobox.
 	public String buildStoryInfoBox() {
 		// Create infobox from template
-		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getInfoBoxTemplate(), createInfoBoxContentArray());
+		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getInfoBoxTemplate(), createInfoBoxContentArray(false));
+	}
+	
+	// Builds a string for the index version of the story infobox.
+	public String buildIndexStoryInfoBox() {
+		// Create infobox from template
+		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getIndexInfoBoxTemplate(), createInfoBoxContentArray(true));
 	}
 	
 	// Gets the local URL of any arbitrary chapter.
@@ -431,10 +444,13 @@ public class Story {
 	}
 	
 	// Creates HashMap of fields and content for a story infobox.
-	public String[] createInfoBoxContentArray() {
+	public String[] createInfoBoxContentArray(boolean hasLink) {
 		// Get the URL for linking to this story
 		String url = (FicArchiveBuilder.getSitePath() + "stories/" + storyOutputFolder.getName() + "/" + chapters[0].getName().replace(".txt", ".html"));
-		String titleLink = "<a href=\"" + url + "\">" + storyTitle + "</a>";
+		String titleLink = storyTitle;
+		if (hasLink) { // only needs the link for the index version
+			titleLink = "<a href=\"" + url + "\">" + storyTitle + "</a>";
+		}
 		// Put Yes/No for Completion Status based on isComplete
 		String completionStatus = "No";
 		if (isComplete) {
@@ -443,13 +459,12 @@ public class Story {
 		// Fields: title (link), fandom, wordcount, chapter #, published, updated, summary, completion status, author, tags, rating
 		//String[] storyPageData;
 		if (FicArchiveBuilder.generateInfoBoxTemplateFields()) {
-			String field = FicArchiveBuilder.getFieldTemplate(); // since this will be reused a lot
 			return new String[] {titleLink, buildField(FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
 			buildField(FicArchiveBuilder.getWordcountLabel(), FicArchiveBuilder.numberWithCommas(wordcount)), 
 			buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
 			buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)), 
 			buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
-			buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
+			buildField(FicArchiveBuilder.getSummaryContentTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
 			buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
 			buildField(FicArchiveBuilder.getByLineTemplate(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
 			buildField(FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
@@ -470,11 +485,11 @@ public class Story {
 		// Don't bother showing chapter title for a single-chapter work
 		String chapterTitle = "";
 		if (FicArchiveBuilder.showChapterNumbers() && chapters.length > 1) {
-			chapterTitle = "Chapter " + Integer.toString(chapterNumber+1) + ": " + chapterTitles[chapterNumber];
+			chapterTitle = getFormattedChapterTitle(chapterNumber);
 		}
 		else if (chapters.length != 1) {
 			chapterTitle = chapterTitles[chapterNumber];
-		}		
+		}
 		// Story infobox, chapter title, story notes, chapter file input, end notes, pagination
 		return new String[] {getStoryInfo(), chapterTitle, getFormattedStoryNotes(chapterNumber), 
 		FicArchiveBuilder.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), 
@@ -497,6 +512,12 @@ public class Story {
 		return "";
 	}
 	
+	// Get the formatted chapter title
+	public String getFormattedChapterTitle(int chapterNumber) {
+		return FicArchiveBuilder.getChapterTitleTemplate().replace("{{C}}", 
+		chapterTitles[chapterNumber]).replace("{{L}}", Integer.toString(chapterNumber + 1));
+	}	
+	
 	// Gets the pagination links for a given chapter.
 	public String getChapterPagination(int chapterNumber) {
 		if (chapters.length == 1) { // don't bother with paginating oneshots
@@ -514,6 +535,7 @@ public class Story {
 		}
 		return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getChapterPaginationContentTemplate(), new String[] {previous, next});
 	}
+	
 	
 	// Use replace() to quickly insert data into certain short templated fields
 	// This uses the replace() method, because it's currently simpler for a short
@@ -545,7 +567,6 @@ public class Story {
 		if (content.equals("")) {
 			return "";
 		}
-		// TODO: check this to make sure it actually works
 		else if (label.equals("") && !field.equals(FicArchiveBuilder.getByLineTemplate())) {
 			return content;
 		}
@@ -564,10 +585,10 @@ public class Story {
 				}
 				// Create the formatted tag and link
 				if (i == (storyTags.length - 1)) { // last tag has special class for CSS usage
-					tagList.append(FicArchiveBuilder.getTagLastTemplate().replace("{C}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
+					tagList.append(FicArchiveBuilder.getTagLastTemplate().replace("{{C}}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
 				}
 				else {
-					tagList.append(FicArchiveBuilder.getTagTemplate().replace("{C}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
+					tagList.append(FicArchiveBuilder.getTagTemplate().replace("{{C}}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
 				}
 			}
 		}

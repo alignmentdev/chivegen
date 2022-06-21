@@ -1,5 +1,20 @@
 CHANGELOG
 
+	June 20
+		- First upload to github!
+		- Removed caching of field template in createInfoBoxContentArray in Story,
+		  since it is no longer needed.
+		- Added title and footer input files.
+		- Gave template input file its own separate function.
+		- Updated version string to 0.2.9
+		- Added a template for chapter titles (for formatting text like 
+		  "Chapter N: Chapter Title").
+		- Slightly changed a few pieces of template text.
+		- Fixed bug where some labels being blank did not properly remove the
+		  label templating from output.
+		- Split story infoboxes into two templates for use in story and index
+		- Changed index-building function to include pagination in the template
+
 	June 9
 		- Fixed bug that caused visible gaps in title structure for 
 		  single-chapter works.

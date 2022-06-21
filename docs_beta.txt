@@ -84,7 +84,7 @@ File: "template.html"
 {{Footer}}				An automated footer. Optional. Default content is "[site name] | Powered by ChiveGen [version number]".
 
 INFOBOX TEMPLATE FIELDS
-File: "infobox.txt"
+Files: "infobox.txt", "infobox_index.txt"
 {{StoryTitle}}			Story title.
 {{Summary}}				Story summary. Uses the summary field template.
 {{Fandom}}				Story fandom(s). Uses the standard field template.
@@ -106,7 +106,7 @@ File: "chapter.txt"
 {{Pagination}}			The "Previous Chapter" / "Next Chapter" buttons. (Note that these use a different template from general pagination.)
 
 PAGINATION TEMPLATE FIELDS
-Separate from chapter pagination.
+Not to be confused with chapter pagination.
 File: "pagination.txt"
 {{Previous}}			Direct link to previous page
 {{JumpPrev}}			Jump pagination links to previous pages
@@ -144,7 +144,7 @@ Include a file in input called "labels.txt".
 You will need replacement labels for ALL FIELDS, in the order given below. 
 If you don't want to change a field's label, just put its default.
 
-CUSTOMIZABLE FIELD LABELS AND DEFAULTS
+CUSTOMIZABLE FIELD LABELS AND DEFAULTS, in order of entry
 Label for...						Default
 Next Page button					"Next Page"
 Previous Page button				"Previous Page"
@@ -160,6 +160,7 @@ Number of Chapters field label		"Chapters"
 Is/Is not complete field label		"Complete"
 Summary field label					"Summary"
 Tags field label					"Tags"
+Rating field label					"Rating"
 Notes field label					"Notes"
 End Notes field label				"End Notes"
 
@@ -192,6 +193,8 @@ Default Story Infobox Template:
 {{Updated}}
 {{Summary}}
 </div>
+
+The index infobox template defaults to the current story infobox template unless an alternative is included in the input files.
 
 Default Infobox Field Template:
 {{L}}: {{C}}
@@ -232,13 +235,9 @@ Default Chapter Pagination Template:
 
 Default Story Index Template:
 {{Navigation}}
-<h1>
-{{ListingTitle}}
-</h1><h2>
-{{CurrentlyShowing}}
-</h2><div class=listings>
-{{Listings}}
-</div>
+<h1>{{ListingTitle}}</h1>
+<h2>{{CurrentlyShowing}}</h2>
+{{Pagination}}<div class=listings>{{Listings}}</div>{{Pagination}}
 
 Default Story Index Navigation Template:
 <div class=listingnav>{{C}}</div>
@@ -247,4 +246,4 @@ Default Page Title Template:
 {T} - {S}
 
 Default Footer Template:
-{S} | Powered by ChiveGen [current version number]
+{{SiteName}} | Powered by ChiveGen [current version number]

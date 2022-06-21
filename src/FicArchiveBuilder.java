@@ -15,7 +15,7 @@ import java.lang.Math;
 
 public class FicArchiveBuilder {
 	// Version string for manual and about text
-	private static String versionString = "v0.2.8";
+	private static String versionString = "v0.2.9";
 
 	/***
 	For input and output folders.
@@ -55,18 +55,20 @@ public class FicArchiveBuilder {
 	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterBody", "EndNotes", "Pagination"};
 	private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
 	private static String[] chapterPaginationKeywords = new String[] {"Previous", "Next"};
-	private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings"};	
+	private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination"};	
 	private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber"};	
 	private static String[] fieldKeywords = new String[] {"L", "C"};
 	
 	// The template objects
 	private static ContentTemplate pageContentTemplate;
 	private static ContentTemplate infoBoxContentTemplate;
+	private static ContentTemplate indexInfoBoxContentTemplate;
 	private static ContentTemplate chapterContentTemplate;
 	private static ContentTemplate workIndexContentTemplate;
 	private static ContentTemplate paginationContentTemplate;
 	private static ContentTemplate chapterPaginationContentTemplate;
 	private static ContentTemplate fieldContentTemplate;
+	private static ContentTemplate summaryContentTemplate;
 	private static ContentTemplate byLineContentTemplate;
 	
 	
@@ -110,7 +112,7 @@ public class FicArchiveBuilder {
 	private static String titleTemplate = "{T} - {S}";
 	private static String titleBase; // the version with the site name in it
 	// Regex template for footers.
-	private static String footerTemplate = "{SITENAME} | Powered by ChiveGen " + versionString;
+	private static String footerTemplate = "{{SiteName}} | Powered by ChiveGen " + versionString;
 	// Built with buildPageFooter()
 	private static String standardFooter;
 	// What we should prefix links with when linking from
@@ -123,6 +125,7 @@ public class FicArchiveBuilder {
 	***/
 	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{{StoryTitle}}\n</h2>\n" +
 		"{{Fandom}}\n{{Wordcount}}\n{{Chapters}}\n{{Published}}\n{{Updated}}\n{{Summary}}\n</div>");
+	private static String indexStoryInfoTemplate = storyInfoTemplate;
 	private static String chapterTemplate = ("{{StoryInfo}}\n" + 
 		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{{Pagination}}\n</div>\n" + 
 		"<h3>\n{{ChapterTitle}}\n</h3>\n"  + 
@@ -130,13 +133,14 @@ public class FicArchiveBuilder {
 		"{{ChapterBody}}\n<div class=notes>\n{{EndNotes}}\n</div><div class=\"chapter-nav bottom-nav\">\n{{Pagination}}\n</div>");
 	private static String chapterPaginationTemplate = "<div class=chapter-pagination>\n{{Previous}}\n{{Next}}\n</div>";
 	private static String paginationTemplate = "<div class=pagination>\n{{Previous}}\n{{JumpPrev}}\n{{JumpCurrent}}\n{{JumpNext}}\n{{Next}}\n</div>";
-	private static String workIndexTemplate = "{{Navigation}}\n<h1>\n{{ListingTitle}}\n</h1><h2>\n{{CurrentlyShowing}}\n</h2><div class=listings>\n{{Listings}}\n</div>";
+	private static String workIndexTemplate = "{{Navigation}}\n<h1>{{ListingTitle}}</h1>\n<h2>{{CurrentlyShowing}}</h2>\n{{Pagination}}<div class=listings>{{Listings}}</div>{{Pagination}}";
 	private static String fieldTemplate = "{{L}}: {{C}}";
 	private static String summaryTemplate = fieldTemplate;
 	private static String byLineTemplate = " by {{C}}";
 	private static String workIndexNavigationTemplate = "<div class=listingnav>{C}</div>";
-	private static String tagTemplate = "<div class=tag>{C}</div>";
-	private static String tagLastTemplate = "<div class=\"tag last\">{C}</div>";
+	private static String tagTemplate = "<div class=tag>{{C}}</div>";
+	private static String tagLastTemplate = "<div class=\"tag last\">{{C}}</div>";
+	private static String chapterTitleTemplate = "Chapter {{L}}: {{C}}";
 	
 	/***
 	For template and file reading.
@@ -296,57 +300,21 @@ public class FicArchiveBuilder {
 			}
 			// Turn the template into a string for use in other methods
 			pageTemplate = readFileToString(templateFile);
-			// Check if story info and chapter templates exist in the input directory
+			// Check if various templates exist in the input directory
 			// And override the defaults if so
-			File storyInfoTemplateFile = new File(input, "infobox.txt");
-			if (storyInfoTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Story infobox template found in input directory.");
-				}
-				storyInfoTemplate = readFileToString(storyInfoTemplateFile);
-			}
-			File chapterTemplateFile = new File(input, "chapter.txt");
-			if (chapterTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Chapter template found in input directory.");
-				}
-				chapterTemplate = readFileToString(chapterTemplateFile);
-			}
-			File chapterNavTemplateFile = new File(input, "chapterpagination.txt");
-			if (chapterNavTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Chapter pagination template found in input directory.");
-				}
-				chapterPaginationTemplate = readFileToString(chapterNavTemplateFile);
-			}
-			File summaryTemplateFile = new File(input, "summaries.txt");
-			if (summaryTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Summary template found in input directory.");
-				}
-				summaryTemplate = readFileToString(summaryTemplateFile);
-			}
-			File paginationTemplateFile = new File(input, "pagination.txt");
-			if (paginationTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Pagination template found in input directory.");
-				}
-				paginationTemplate = readFileToString(paginationTemplateFile);
-			}
-			File fieldTemplateFile = new File(input, "fields.txt");
-			if (fieldTemplateFile.exists()) {
-				if (verbose) {
-					System.out.println("Field template found in input directory.");
-				}
-				fieldTemplate = readFileToString(fieldTemplateFile);
-			}
-			File workIndexFile = new File(input, "stories_by.txt");
-			if (workIndexFile.exists()) {
-				if (verbose) {
-					System.out.println("Work index template found in input directory.");
-				}
-				workIndexTemplate = readFileToString(workIndexFile);
-			}
+			titleTemplate = getTemplateFromFile(new File(input, "pagetitle.txt"), titleTemplate);
+			footerTemplate = getTemplateFromFile(new File(input, "footer.txt"), footerTemplate);
+			storyInfoTemplate = getTemplateFromFile(new File(input, "infobox.txt"), storyInfoTemplate);
+			indexStoryInfoTemplate = getTemplateFromFile(new File(input, "infobox_index.txt"), storyInfoTemplate);
+			chapterTemplate = getTemplateFromFile(new File(input, "chapter.txt"), chapterTemplate);
+			chapterPaginationTemplate = getTemplateFromFile(new File(input, "chapterpagination.txt"), chapterPaginationTemplate);
+			chapterTitleTemplate = getTemplateFromFile(new File(input, "chaptertitles.txt"), chapterTitleTemplate);
+			summaryTemplate = getTemplateFromFile(new File(input, "summaries.txt"), summaryTemplate);
+			paginationTemplate = getTemplateFromFile(new File(input, "pagination.txt"), paginationTemplate);
+			fieldTemplate = getTemplateFromFile(new File(input, "fields.txt"), fieldTemplate);
+			workIndexTemplate = getTemplateFromFile(new File(input, "stories_by.txt"), workIndexTemplate);
+			// Check for files with labels, ratings, etc, and use them to 
+			// override defaults if so.
 			File fieldLabels = new File(input, "labels.txt");
 			if (fieldLabels.exists()) {
 				if (verbose) {
@@ -368,16 +336,16 @@ public class FicArchiveBuilder {
 				}
 				setCompletionStatuses(customCompletionCodes);
 			}
-						
-			// Generate the templates
+			// Generate the templates from the various input strings
 			if (!brief) {
 				System.out.println("Reading standard page template...");
 			}
 			pageContentTemplate = buildTemplate(pageTemplate, standardKeywords);
 			if (!brief) {
-				System.out.println("Reading story infobox template...");
+				System.out.println("Reading story infobox templates...");
 			}
 			infoBoxContentTemplate = buildTemplate(storyInfoTemplate, storyInfoKeywords);
+			indexInfoBoxContentTemplate = buildTemplate(indexStoryInfoTemplate, storyInfoKeywords);
 			if (!brief) {
 				System.out.println("Reading chapter page template...");
 			}
@@ -398,25 +366,27 @@ public class FicArchiveBuilder {
 				System.out.println("Reading field template...");
 			}
 			fieldContentTemplate = buildTemplate(fieldTemplate, fieldKeywords);
+			if (!brief) {
+				System.out.println("Reading summary template...");
+			}
+			summaryContentTemplate = buildTemplate(summaryTemplate, fieldKeywords);
 			// Dont bother unless we're actually using the byline
 			if (useByLine) {
 				if (!brief) {
 					System.out.println("Reading byline template...");
 				}
 				byLineContentTemplate = buildTemplate(byLineTemplate, fieldKeywords);
-			}
-			
+			}			
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
 				output.mkdirs();
 			}
-			// Create a standard page footer
+			// Create a standard page footer and title (template)
 			standardFooter = buildPageFooter();
-			// And title template
 			titleBase = buildPageTitleBase(siteName);
 			try {
-				// Make sure the input and template files exist, just in case.
-				if (!input.exists() || !templateFile.exists()) {
+				// Check again that the template file exists, just in case.
+				if (!templateFile.exists()) {
 					throw new FileNotFoundException();
 				}
 				else {
@@ -567,11 +537,9 @@ public class FicArchiveBuilder {
 					}
 				}
 			} catch (FileNotFoundException e) {
-				if (!input.exists()) {
-					System.out.println("Error: " + input.getPath() + " does not exist.");
-				}
 				if (!templateFile.exists()) {
-					System.out.println("Error: " + templateFile.getPath() + " does not exist.");
+					System.out.println("Error: required template file " + 
+					templateFile.getPath() + " does not exist.");
 				}
 				System.out.println();
 				e.printStackTrace();
@@ -756,6 +724,19 @@ public class FicArchiveBuilder {
 		}
 	}
 	
+	// Returns either the string contents of the File argument, or the original
+	// String argument if no such File exists.
+	public static String getTemplateFromFile(File f, String s) {
+		if (f.exists()) {
+			if (!brief) {
+				System.out.println("'" + f.getName() + "' found in input directory." +
+				" Reading to string...");
+			}
+			s = readFileToString(f);
+		}
+		return s;
+	}
+	
 	// Reads a set of field labels from file.
 	// File must have ALL labels included, even non-custom ones!
 	public static void setFieldLabels(File labelsFile) {
@@ -777,6 +758,7 @@ public class FicArchiveBuilder {
 				completionLabel = labelReader.nextLine();
 				summaryLabel = labelReader.nextLine();
 				tagsLabel = labelReader.nextLine();
+				ratingLabel = labelReader.nextLine();
 				notesLabel = labelReader.nextLine();
 				endNotesLabel = labelReader.nextLine();
 			} catch (NoSuchElementException e) {
@@ -1309,7 +1291,7 @@ public class FicArchiveBuilder {
 	}
 	
 	public static String buildPageFooter() {
-		return footerTemplate.replace("{SITENAME}", siteName);
+		return footerTemplate.replace("{{SiteName}}", siteName);
 	}
 	
 	public static String buildDefaultHomePage() {
@@ -1365,7 +1347,7 @@ public class FicArchiveBuilder {
 		if (!listingNav.equals("")) { // only create this if there's something to put in it
 			listingNavString = workIndexNavigationTemplate.replace("{C}", listingNav.toString()).replace("{L}", "Navigation");;
 		}
-		return new String[] {listingNavString, categoryName, "", categoryIndex.toString()};
+		return new String[] {listingNavString, categoryName, "", categoryIndex.toString(), ""};
 	}	
 	
 	// Build all the pages for a category like tags/fandom/author/etc
@@ -1418,26 +1400,27 @@ public class FicArchiveBuilder {
 			// many pages have been created already), build an index page.
 			for (int j = 0; j < maxItemsPerPage; j++) {
 				// add the infobox for each story tagged on that page
-				pageOutput.append(relatedStories.get((i * maxItemsPerPage) + j).getStoryInfo());
+				pageOutput.append(relatedStories.get((i * maxItemsPerPage) + j).getInfoboxForIndex());
 			}
-			// Generate pagination buttons from template
-			pageOutput.append(buildStandardPaginationString(generatePagination(categoryFolderURL + toSafeURL(category), i, totalPages)));
 			// Create page elements array
 			indexPageElements = new String[] {"", categoryLabel, 
 			("Showing " + ((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size()),
-			pageOutput.toString()};
+			pageOutput.toString(), 
+			buildStandardPaginationString(generatePagination(categoryFolderURL + toSafeURL(category), i, totalPages))};
 			pageStrings[i] = writeIntoTemplate(workIndexContentTemplate, indexPageElements);
 		}
 		// Generate the last page, which might not be full length.
 		pageOutput = new StringBuilder();
 		for (int i = (maxItemsPerPage * (totalPages - 1)); i < relatedStories.size(); i++) {
-			pageOutput.append(relatedStories.get(i).getStoryInfo());
+			pageOutput.append(relatedStories.get(i).getInfoboxForIndex());
 		}
 		// Generate pagination for final page
 		pageOutput.append(buildStandardPaginationString(generatePagination(categoryFolderURL + toSafeURL(category), totalPages - 1, totalPages)));
 		// Create page elements array for it
 		indexPageElements = new String[] {"", categoryLabel, 
-		("Showing " + ((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size()), pageOutput.toString()};
+		("Showing " + ((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size()), 
+		pageOutput.toString(),
+		buildStandardPaginationString(generatePagination(categoryFolderURL + toSafeURL(category), totalPages, totalPages))};
 		// Insert the resulting page into the last entry of pageStrings
 		pageStrings[totalPages - 1] = writeIntoTemplate(workIndexContentTemplate, indexPageElements);
 		// Return the array
@@ -1580,6 +1563,11 @@ public class FicArchiveBuilder {
 		return infoBoxContentTemplate;
 	}
 	
+	// Returns the story infobox template
+	public static ContentTemplate getIndexInfoBoxTemplate() {
+		return indexInfoBoxContentTemplate;
+	}
+	
 	// Returns page template
 	public static ContentTemplate getPageTemplate() {
 		return pageContentTemplate;
@@ -1603,6 +1591,11 @@ public class FicArchiveBuilder {
 	// Returns the field template
 	public static ContentTemplate getFieldContentTemplate() {
 		return fieldContentTemplate;
+	}
+	
+	// Returns the summary template
+	public static ContentTemplate getSummaryContentTemplate() {
+		return summaryContentTemplate;
 	}
 	
 	public static ContentTemplate getByLineTemplate() {
@@ -1646,6 +1639,11 @@ public class FicArchiveBuilder {
 	// Returns the chapter pagination template.
 	public static String getTagLastTemplate() {
 		return tagLastTemplate;
+	}
+	
+	// Returns the chapter title template.
+	public static String getChapterTitleTemplate() {
+		return chapterTitleTemplate;
 	}
 	
 	// Gets the previous chapter button label
