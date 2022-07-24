@@ -15,7 +15,7 @@ import java.lang.Math;
 
 public class FicArchiveBuilder {
 	// Version string for manual and about text
-	private static String versionString = "v0.2.9";
+	private static String versionString = "v0.2.10";
 
 	/***
 	For input and output folders.
@@ -52,11 +52,11 @@ public class FicArchiveBuilder {
 	private static String[] standardKeywords = new String[] {"Title", "Main", "Footer"};
 	private static String[] storyInfoKeywords = new String[] {"StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
 	"Summary", "IsComplete", "Author", "Tags", "Rating"};
-	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterBody", "EndNotes", "Pagination"};
+	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "Pagination"};
 	private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
 	private static String[] chapterPaginationKeywords = new String[] {"Previous", "Next"};
 	private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination"};	
-	private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber"};	
+	private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber", "VersionNumber"};	
 	private static String[] fieldKeywords = new String[] {"L", "C"};
 	
 	// The template objects
@@ -70,6 +70,7 @@ public class FicArchiveBuilder {
 	private static ContentTemplate fieldContentTemplate;
 	private static ContentTemplate summaryContentTemplate;
 	private static ContentTemplate byLineContentTemplate;
+	private static ContentTemplate tagContentTemplate;
 	
 	
 	/***
@@ -123,7 +124,7 @@ public class FicArchiveBuilder {
 	Default templates for other page elements. These are overridden if an 
 	appropriate file exists.
 	***/
-	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{{StoryTitle}}\n</h2>\n" +
+	private static String storyInfoTemplate = ("<div class=storyinfo>\n<h2>\n{{StoryTitle}}\n</h2>\n{{Author}}\n" +
 		"{{Fandom}}\n{{Wordcount}}\n{{Chapters}}\n{{Published}}\n{{Updated}}\n{{Summary}}\n</div>");
 	private static String indexStoryInfoTemplate = storyInfoTemplate;
 	private static String chapterTemplate = ("{{StoryInfo}}\n" + 
@@ -138,8 +139,8 @@ public class FicArchiveBuilder {
 	private static String summaryTemplate = fieldTemplate;
 	private static String byLineTemplate = " by {{C}}";
 	private static String workIndexNavigationTemplate = "<div class=listingnav>{C}</div>";
-	private static String tagTemplate = "<div class=tag>{{C}}</div>";
-	private static String tagLastTemplate = "<div class=\"tag last\">{{C}}</div>";
+	private static String tagTemplate = "<div class=tag><a href=\"{{C}}\">{{L}}</a></div>";
+	private static String tagLastTemplate = "<div class=\"tag last\"><a href=\"{{C}}\">{{L}}</a></div>";
 	private static String chapterTitleTemplate = "Chapter {{L}}: {{C}}";
 	
 	/***
@@ -376,7 +377,11 @@ public class FicArchiveBuilder {
 					System.out.println("Reading byline template...");
 				}
 				byLineContentTemplate = buildTemplate(byLineTemplate, fieldKeywords);
-			}			
+			}	
+			if (!brief) {
+				System.out.println("Reading tag template...");
+			}
+			tagContentTemplate = buildTemplate(tagTemplate, fieldKeywords);		
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
 				output.mkdirs();
@@ -420,9 +425,9 @@ public class FicArchiveBuilder {
 						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
 						System.out.println("Building story " + stories[i].getStoryTitle() + "...");
 						stories[i].buildStory();
-						addToStoryMap(archiveTagMap, stories[i].getTagSet(), stories[i]);
-						addToStoryMap(archiveAuthorMap, stories[i].getAuthor(), stories[i]);
-						addToStoryMap(archiveFandomMap, stories[i].getFandom(), stories[i]);
+						addToStoryMap(archiveTagMap, stories[i].getStoryTags(), stories[i]);
+						addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
+						addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
 					}		
 					// Build indexes of works by various orderings
 					String currentIndex;										
@@ -508,7 +513,7 @@ public class FicArchiveBuilder {
 							// Locate insertion points and insert the stats widget data into the homepage body
 							ContentTemplate homePageTemplate = buildTemplate(homePageContent, statsWidgetKeywords);
 							String[] stats = new String[] {numberWithCommas(stories.length), numberWithCommas(getTotalWordcount(stories)), 
-							numberWithCommas(getTotalFandoms(stories)),  numberWithCommas(getTotalAuthors(stories))};
+							numberWithCommas(getTotalFandoms(stories)),  numberWithCommas(getTotalAuthors(stories)), versionString};
 							// Insert the stats into the homepage text body
 							homePageContent = writeIntoTemplate(homePageTemplate, stats);
 						}
@@ -1205,14 +1210,14 @@ public class FicArchiveBuilder {
 		for (int i = 0; i < text.length(); i++) {
 			c = text.charAt(i);
 			// Check that c is actually a letter! 64-91 is caps, 96-123 is lower
-			if (atStartOfWord && ((c > 64 && c < 91) || (c > 96 && c < 123))) {
-				titleBuilder.append(Character.toUpperCase(c));
+			if (atStartOfWord) {
+				if ((c > 96 && c < 123)) {
+					c = (char)(c - 32);
+				}				
 				atStartOfWord = false;
 			}
-			else {
-				titleBuilder.append(c);
-			}
-			if (c == ' ' || c == '\t' || c == '.') {
+			titleBuilder.append(c);
+			if (c == ' ' || c == '\t' || c == '.' || c == '(') {
 				atStartOfWord = true;
 			}
 		}
@@ -1337,7 +1342,7 @@ public class FicArchiveBuilder {
 			}
 			// Link to the first page of the category
 			categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + toSafeURL(categoryArray[i]) + "/1.html\">" + 
-			categoryArray[i] + "</a> (" + categories.get(categoryArray[i]).size() + ")</li>");
+			toTitleCase(categoryArray[i]) + "</a> (" + categories.get(categoryArray[i]).size() + ")</li>");
 		}
 		// Close the last unordered list
 		if (categoryArray.length != 0) {
@@ -1504,44 +1509,49 @@ public class FicArchiveBuilder {
 	
 	// Gets the total number of fandoms in the archive
 	public static int getTotalFandoms(Story[] stories) {
-		int numberOfFandoms = 0;
+		int total = 0;
 		// Store strings in a hashset for fast lookup
-		HashSet<String> fandoms = new HashSet<String>();
+		HashSet<String> allFandoms = new HashSet<String>();
 		for (Story s : stories) {
 			// if the fandom isn't in the set, add it, and increment total
-			if (!fandoms.contains(s.getFandom())) {
-				fandoms.add(s.getFandom());
-				numberOfFandoms++;
+			for (String fandom : s.getFandoms()) {
+				if (!allFandoms.contains(fandom)) {
+					allFandoms.add(fandom);
+					total++;
+				}
 			}
 		}
-		return numberOfFandoms;
+		return total;
 	}
 	
 	// Gets the total number of authors in the archive
 	// May be deprecated if/when a method is added to cover unique qualities in general
 	public static int getTotalAuthors(Story[] stories) {
-		int numberOfAuthors = 0;
+		int total = 0;
 		// Store strings in a hashset for fast lookup
-		HashSet<String> authors = new HashSet<String>();
+		HashSet<String> allAuthors = new HashSet<String>();
 		for (Story s : stories) {
 			// if the author isn't in the set, add it, and increment total
-			if (!authors.contains(s.getAuthor())) {
-				authors.add(s.getAuthor());
-				numberOfAuthors++;
+			for (String author : s.getAuthors()) {
+				if (!allAuthors.contains(author)) {
+					allAuthors.add(author);
+					total++;
+				}
 			}
 		}
-		return numberOfAuthors;
+		return total;
 	}
 	
-	// Add tags and associated story to an archive category hashmap
-	public static void addToStoryMap(HashMap<String, ArrayList<Story>> map, HashSet<String> newTags, Story story) {
+	// Add tags/hashset data and associated story to an archive category hashmap
+	public static void addToStoryMap(HashMap<String, ArrayList<Story>> map, String[] newTags, Story story) {
 		for (String tag : newTags) {
 			addToStoryMap(map, tag, story);
 		}
 	}
 	
-	//@override, general 'add to story map' method
+	// General 'add to story map' method
 	public static void addToStoryMap(HashMap<String, ArrayList<Story>> map, String tag, Story story) {
+		tag = tag.toLowerCase(); // ignore case
 		if (map.containsKey(tag)) {
 			// add this story to the arraylist of associated stories
 			map.get(tag).add(story);
@@ -1598,6 +1608,7 @@ public class FicArchiveBuilder {
 		return summaryContentTemplate;
 	}
 	
+	// Used for the byline
 	public static ContentTemplate getByLineTemplate() {
 		if (useByLine) {
 			return byLineContentTemplate;
@@ -1620,23 +1631,14 @@ public class FicArchiveBuilder {
 	public static String getChapterPaginationTemplate() {
 		return chapterPaginationTemplate;
 	}
+
 	
-	// Gets the template used for author bylines.
-	// If useByLine is false, this returns the standard field template.
-	// TO BE DEPRECATED
-	public static String getByLine() {
-		if (useByLine) {
-			return byLineTemplate;
-		}
-		return fieldTemplate;
+	// Returns the tag template.
+	public static ContentTemplate getTagTemplate() {
+		return tagContentTemplate;
 	}
 	
-	// Returns the chapter pagination template.
-	public static String getTagTemplate() {
-		return tagTemplate;
-	}
-	
-	// Returns the chapter pagination template.
+	// Returns the string version of the 'last tag' template.
 	public static String getTagLastTemplate() {
 		return tagLastTemplate;
 	}

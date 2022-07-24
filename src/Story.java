@@ -11,6 +11,8 @@ A class to represent an individual story, with a folder, chapters and metadata.
 public class Story {
 	// The folder the story files will be written to
 	private File storyOutputFolder;
+	// Title
+	private String storyTitle = "";
 	// An array of input files for chapters
 	private File[] chapters;
 	// Read from toc.txt, or else autofilled
@@ -20,10 +22,12 @@ public class Story {
 	// tag pages and sorting stories, etc.
 	private String[] storyTags;
 	private HashSet<String> storyTagSet = new HashSet<String>();
-	// Title
-	private String storyTitle = "";
-	// Fandom
-	private String fandom = "";
+	// Fandoms.
+	private String[] fandoms;
+	private HashSet<String> fandomHashSet = new HashSet<String>();
+	// Story authors.
+	private String[] authors;
+	private HashSet<String> authorHashSet = new HashSet<String>();
 	// Story summary. Included in infobox.
 	private String summary = "";
 	// Story notes. Displayed on page of first chapter.
@@ -33,8 +37,6 @@ public class Story {
 	// The published and last updated dates. Input file should use ISO format.
 	private LocalDate updated; 
 	private LocalDate published;
-	// Story author.
-	private String author = "";
 	// Total story wordcount.
 	// It is initially set to -1 because 0 could mean a story 0 words long.
 	private int wordcount = -1; 
@@ -130,12 +132,18 @@ public class Story {
 							if (currentLineData[0].equals("title")) {
 								storyTitle = currentLineData[1];
 							}
-							else if (currentLineData[0].equals("fandom")) {
-								fandom = currentLineData[1];
+							else if (currentLineData[0].equals("fandom") || currentLineData[0].equals("fandoms")) {
+								fandoms = currentLineData[1].split(", ");
+								for (String fandom : fandoms) {
+									fandomHashSet.add(fandom.toLowerCase()); // ignore case for hashsets
+								}
 								hasFandom = true;
 							}
 							else if (currentLineData[0].equals("author") || currentLineData[0].equals("creator")) {
-								author = currentLineData[1];
+								authors = currentLineData[1].split(", ");
+								for (String author : authors) {
+									authorHashSet.add(author.toLowerCase()); // ignore case for hashsets
+								}
 								FicArchiveBuilder.setHasAuthors(true);
 								hasAuthor = true;
 							}
@@ -246,18 +254,23 @@ public class Story {
 		if (!hasStoryDataFile || storyNotes.equals("")) {
 			storyNotes = "";
 		}
-		// Placholder is used for sorting purposes
+		// Placeholders are used in these fields for sorting purposes
 		if (!hasFandom) {
 			if (FicArchiveBuilder.isVerbose()) {
 				System.out.println("Autofilling fandom...");
 			}
-			fandom = "No Fandom Given";
+			fandoms = new String[] {"No Fandom Given"};
+			fandomHashSet.add("no fandom given");
 		}
 		if (!hasAuthor) {
 			if (FicArchiveBuilder.isVerbose()) {
 				System.out.println("Autofilling author...");
 			}
-			author = "Unknown Author";
+			authors = new String[] {"Unknown Author"};
+			authorHashSet.add("unknown author");
+		}
+		if (!hasTags) {
+			storyTags = new String[]{}; // to prevent a null pointer if accessing storyTags in some way
 		}
 		// If any date info is missing, fill it in
 		if (!hasDateUpdated || !hasDatePublished) {
@@ -311,7 +324,7 @@ public class Story {
 	
 	// Gets dates from the file attributes, if no dates are given
 	// Published and created should be potentially different dates, but this
-	// doesn't seem to work currently. Might be a Linux issue?
+	// doesn't seem to work currently. Might be a Linux-specific issue?
 	public void setDatesFromMetadata(File inputStoryFolder) {
 		try {
 			BasicFileAttributes storyFolderAttributes = Files.readAttributes(Paths.get(inputStoryFolder.getPath()), BasicFileAttributes.class);
@@ -491,8 +504,8 @@ public class Story {
 			chapterTitle = chapterTitles[chapterNumber];
 		}
 		// Story infobox, chapter title, story notes, chapter file input, end notes, pagination
-		return new String[] {getStoryInfo(), chapterTitle, getFormattedStoryNotes(chapterNumber), 
-		FicArchiveBuilder.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), 
+		return new String[] {getStoryInfo(), chapterTitle, getFormattedStoryNotes(chapterNumber), "",
+		FicArchiveBuilder.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), "",
 		getFormattedEndNotes(chapterNumber), chapterPagination};
 	}
 	
@@ -572,27 +585,29 @@ public class Story {
 		}
 		return FicArchiveBuilder.writeIntoTemplate(field, new String[] {label, content});
 	}
+
 	
-	// Gets the tags in order, with formatting (not currently templated)
 	public String getFormattedTags() {
-		StringBuilder tagList = new StringBuilder();
-		String tagURL = "#";
-		if (hasTags) {
-			for (int i = 0; i < storyTags.length; i++) {
-				// don't bother building valid links if no tag pages will be generated
-				if (!FicArchiveBuilder.skipTagPages()) { 
-					tagURL = FicArchiveBuilder.getSitePath() + "tags/" + FicArchiveBuilder.toSafeURL(storyTags[i].toLowerCase()) + "/1.html";
-				}
-				// Create the formatted tag and link
-				if (i == (storyTags.length - 1)) { // last tag has special class for CSS usage
-					tagList.append(FicArchiveBuilder.getTagLastTemplate().replace("{{C}}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
-				}
-				else {
-					tagList.append(FicArchiveBuilder.getTagTemplate().replace("{{C}}", "<a href=\"" + tagURL + "\">" + storyTags[i] + "</a>"));
-				}
+		return buildFormattedArrayField(storyTags, "tags", FicArchiveBuilder.skipTagPages());
+	}
+	
+	// Build a formatted tagset-style string for fields with multiple contents 
+	// like authors/fandoms/tags
+	public String buildFormattedArrayField(String[] arrayField, String URLCategory, boolean skipCategoryPages) {
+		StringBuilder field = new StringBuilder();
+		String linkURL = "#";
+		for (int i = 0; i < arrayField.length; i++) {
+			if (!skipCategoryPages) {
+				linkURL = FicArchiveBuilder.getSitePath() + URLCategory + "/" + FicArchiveBuilder.toSafeURL(arrayField[i].toLowerCase()) + "/1.html";
+			}
+			if (i < arrayField.length - 1) {
+				field.append(buildField(FicArchiveBuilder.getTagTemplate(), arrayField[i], linkURL));
+			}
+			else { // since we don't use this much, it's fine to leave as regex for now
+				field.append(FicArchiveBuilder.getTagLastTemplate().replace("{{C}}", linkURL).replace("{{L}}", arrayField[arrayField.length - 1]));
 			}
 		}
-		return tagList.toString();
+		return field.toString();
 	}
 	
 	// Gets the tags array
@@ -611,23 +626,33 @@ public class Story {
 	}
 	
 	// Gets the fandom.
-	public String getFandom() {
-		return fandom;
+	public String[] getFandoms() {
+		return fandoms;
 	}
 	
-	// Gets the wordcount.
-	public int getWordCount() {
-		return wordcount;
+	// Gets the fandom hashset.
+	public HashSet<String> getFandomHashSet() {
+		return fandomHashSet;
 	}
 	
 	// Gets the author.
-	public String getAuthor() {
-		return author;
+	public String[] getAuthors() {
+		return authors;
+	}
+	
+	// Gets the author.
+	public HashSet<String> getAuthorHashSet() {
+		return authorHashSet;
 	}
 	
 	// Gets the date updated, or failing that, the date published.
 	public LocalDate getDateUpdated() {
 		return updated;
+	}
+	
+	// Gets the wordcount.
+	public int getWordCount() {
+		return wordcount;
 	}
 	
 	// Gets the rating enum
@@ -643,16 +668,13 @@ public class Story {
 		return storyTitle;
 	}
 	
-	// Gets either the fandom, or (if none was given and we're skipping blank
-	// fields) a blank string.
+	// Gets either the formatted list of fandoms, or (if none was given and we're 
+	// skipping blank fields) a blank string.
 	private String getSkippableFandom() {
 		if (!hasFandom && FicArchiveBuilder.skipEmptyFields()) {
 			return "";
 		}
-		if (FicArchiveBuilder.skipFandomIndex()) {
-			return fandom;
-		}
-		return "<a href=\"" + FicArchiveBuilder.getSitePath() + "fandoms/" + FicArchiveBuilder.toSafeURL(fandom) + "/1.html\">" + fandom + "</a>";
+		return buildFormattedArrayField(fandoms, "fandoms", FicArchiveBuilder.skipFandomIndex());
 	}
 	
 	// Same as getSkippableFandom(), but for the author field.
@@ -660,10 +682,7 @@ public class Story {
 		if (!hasAuthor && FicArchiveBuilder.skipEmptyFields()) {
 			return "";
 		}
-		if (FicArchiveBuilder.skipAuthorIndex()) {
-			return author;
-		}
-		return "<a href=\"" + FicArchiveBuilder.getSitePath() + "authors/" + FicArchiveBuilder.toSafeURL(author) + "/1.html\">" + author + "</a>";
+		return buildFormattedArrayField(authors, "authors", FicArchiveBuilder.skipAuthorIndex());
 	}
 	
 	// Same as getSkippableFandom(), but with completion status field.

@@ -15,28 +15,28 @@ For some customization of your site's style, you may also want to add other temp
 
 STORYINFO.TXT - RECOGNIZED FIELDS & ASSOCIATED INFOBOX TEMPLATE FIELDS
 For further information about template fields, see TEMPLATING FIELDS FOR CUSTOM TEMPLATES.
-Title: 														{{StoryTitle}}
-Summary: 													{{Summary}}
-Notes: 														{{StoryNotes}}
+Title: 								{{StoryTitle}}
+Summary: 							{{Summary}}
+Notes: 								{{StoryNotes}}
 	Notes are not displayed in the infobox, but as part of the first chapter's page -- see CHAPTER TEMPLATE FIELDS.
-Fandom: 													{{Fandom}}
-Author: / Creator: 											{{Author}}
+Fandom: 							{{Fandom}}
+Author: / Creator: 						{{Author}}
 Published: / Date Published: / Posted: / Date Posted: 		{{Published}}
-Updated: / Date Updated:									{{Updated}}
+Updated: / Date Updated:					{{Updated}}
 	Note that dates must be formatted in ISO formated, i.e. YYYY-MM-DD, to be recognized.
-Tags: / Characters: 										{{Tags}}
-Words: / Length: 											{{Wordcount}}
-Complete:													{{IsComplete}}
+Tags: / Characters: 						{{Tags}}
+Words: / Length: 						{{Wordcount}}
+Complete:							{{IsComplete}}
 	"Yes" and "True" = Complete; anything else (including no data) defaults to Incomplete.
-Rating: / Rating:											{{Rating}}
+Rating: / Rating:						{{Rating}}
 	Quick table of ratings, for reference
-	Input									Internal Name		Default Label
-	"G" or "K"								Rating.G			"G"
-	"PG" or "K+"							Rating.PG			"PG"
-	"T" or "Teen"							Rating.TEEN			"T"
-	"M" or "Ma" or "Mature"					Rating.MATURE		"MA"
-	"E" or "X" or "NC-17" or "Explicit"		Rating.EXPLICIT		"E"
-	Anything else, or nothing				Rating.UNRATED		"Not Rated"
+	Input					Internal Name		Default Label
+	"G" or "K"				Rating.G		"G"
+	"PG" or "K+"				Rating.PG		"PG"
+	"T" or "Teen"		       		Rating.TEEN		"T"
+	"M" or "Ma" or "Mature"			Rating.MATURE		"MA"
+	"E" or "X" or "NC-17" or "Explicit"	Rating.EXPLICIT		"E"
+	Anything else, or nothing		Rating.UNRATED		"Not Rated"
 	
 
 DEFAULT PAGES
@@ -44,25 +44,25 @@ DEFAULT PAGES
 "by_author.html"	An alphabetical index of all authors in the archive.
 "by_fandom.html"	An alphabetical index of all fandoms in the archive.
 "by_title.html"		An alphabetical index of works.
-"/latest/"			Paginated index of all stories by latest date updated.
-"/fandoms/"			Folders for each fandom in the archive, with paginated indexes of all stories in those fandoms.
-"/authors/"			Folders for each author in the archive, with paginated indexes of all stories by those authors.
-"/tags"/			Folders for each tag used in the archive, with paginated indexes of all stories with that tag.
-"/stories/"			Folders for each individual story, with chapters and table of contents.
+"/latest/"		Paginated index of all stories by latest date updated.
+"/fandoms/"		Folders for each fandom in the archive, with paginated indexes of all stories in those fandoms.
+"/authors/"		Folders for each author in the archive, with paginated indexes of all stories by those authors.
+"/tags"/		Folders for each tag used in the archive, with paginated indexes of all stories with that tag.
+"/stories/"		Folders for each individual story, with chapters and table of contents.
 		
 
 INPUT FILENAMES FOR CUSTOM TEMPLATES
-"template.html"				Page template. Required.
-"infobox.txt"				Story infobox template.
-"fields.txt"				Basic infobox field template.
-"summaries.txt"				Summary/notes field template.
-"chapter.txt"				Chapter page template.
-"stories_by.txt"			Story index template.
+"template.html"		Page template. Required.
+"infobox.txt"		Story infobox template.
+"fields.txt"		Basic infobox field template.
+"summaries.txt"		Summary/notes field template.
+"chapter.txt"		Chapter page template.
+"stories_by.txt"	Story index template.
 
 OTHER INPUT
-"labels.txt"				Custom field labels. (See: TO SET ALTERNATIVE FIELD LABELS)
-"ratings.txt"				Custom story ratings. (See: STORYINFO.TXT - RECOGNIZED FIELDS and CUSTOM RATINGS)
-"completion.txt"			Custom completion status text. (See: CUSTOM COMPLETION STATUSES)
+"labels.txt"		Custom field labels. (See: TO SET ALTERNATIVE FIELD LABELS)
+"ratings.txt"		Custom story ratings. (See: STORYINFO.TXT - RECOGNIZED FIELDS and CUSTOM RATINGS)
+"completion.txt"	Custom completion status text. (See: CUSTOM COMPLETION STATUSES)
 
 
 CASUAL HTML AND HOW TO USE IT
@@ -79,64 +79,64 @@ These fields are the fields ChiveGen tries to write to each template. You can in
 
 STANDARD PAGE TEMPLATE FIELDS
 File: "template.html"
-{{Title}}				Page title (as in, the one that appears on the label of the browser tab.)
-{{Main}}				Content inserted into the main body of the page.
-{{Footer}}				An automated footer. Optional. Default content is "[site name] | Powered by ChiveGen [version number]".
+{{Title}}		Page title (as in, the one that appears on the label of the browser tab.)
+{{Main}}		Content inserted into the main body of the page.
+{{Footer}}		An automated footer. Optional. Default content is "[site name] | Powered by ChiveGen [version number]".
 
 INFOBOX TEMPLATE FIELDS
 Files: "infobox.txt", "infobox_index.txt"
-{{StoryTitle}}			Story title.
-{{Summary}}				Story summary. Uses the summary field template.
-{{Fandom}}				Story fandom(s). Uses the standard field template.
-{{Author}}				Story author. Uses either the standard field template or the byline template, depending on user settings.
-{{Published}}			Date published. Uses the standard field template.
-{{Updated}}				Date updated. Uses the standard field template.
-{{Tags}}				Story tags. Uses a standard field template, plus extra formatting of <div class=tag></div> and <div class="tag last"></div> on individual tags.
-{{Wordcount}}			Story wordcount. Uses standard field template.
-{{IsComplete}}			Completion status. Uses standard field template.
-{{Rating}}				Story rating. Uses standard field template.
+{{StoryTitle}}		Story title.
+{{Summary}}		Story summary. Uses the summary field template.
+{{Fandom}}		Story fandom(s). Uses the standard field template, but with each fandom given tag formatting.
+{{Author}}		Story author(s). Uses either the standard field template or the byline template, depending on user settings. Each author is given tag formatting.
+{{Published}}		Date published. Uses the standard field template.
+{{Updated}}		Date updated. Uses the standard field template.
+{{Tags}}		Story tags. Uses a standard field template, plus extra formatting of <div class=tag></div> and <div class="tag last"></div> on individual tags.
+{{Wordcount}}		Story wordcount. Uses standard field template.
+{{IsComplete}}		Completion status. Uses standard field template.
+{{Rating}}		Story rating. Uses standard field template.
 		
 CHAPTER TEMPLATE FIELDS
 File: "chapter.txt"
-{{StoryInfo}}			The story infobox
-{{ChapterTitle}}		The chapter title
-{{StoryNotes}}			Author's notes, derived from the notes field in storyinfo.txt
-{{ChapterBody}}			Main text of the chapter.
-{{EndNotes}}			Author's end notes, derived from the end notes field in storyinfo.txt
-{{Pagination}}			The "Previous Chapter" / "Next Chapter" buttons. (Note that these use a different template from general pagination.)
+{{StoryInfo}}		The story infobox
+{{ChapterTitle}}	The chapter title
+{{StoryNotes}}		Author's notes, derived from the notes field in storyinfo.txt
+{{ChapterBody}}		Main text of the chapter.
+{{EndNotes}}		Author's end notes, derived from the end notes field in storyinfo.txt
+{{Pagination}}		The "Previous Chapter" / "Next Chapter" buttons. (Note that these use a different template from general pagination.)
 
 PAGINATION TEMPLATE FIELDS
 Not to be confused with chapter pagination.
 File: "pagination.txt"
-{{Previous}}			Direct link to previous page
-{{JumpPrev}}			Jump pagination links to previous pages
-{{JumpCurrent}}			Jump pagination for current page (not a link.)
-{{JumpNext}}			Jump pagination links for next pages.
-{{Next}}				Direct link to next page
+{{Previous}}		Direct link to previous page
+{{JumpPrev}}		Jump pagination links to previous pages
+{{JumpCurrent}}		Jump pagination for current page (not a link.)
+{{JumpNext}}		Jump pagination links for next pages.
+{{Next}}		Direct link to next page
 
 CHAPTER PAGINATION TEMPLATE FIELDS
 File: "chapterpagination.txt"
-{{Previous}}			Link to previous page/chapter
-{{Next}}				Link to next page/chapter
+{{Previous}}		Link to previous page/chapter
+{{Next}}		Link to next page/chapter
 
 STORY INDEX TEMPLATE FIELDS
 File: "stories_by.txt"
-{{Navigation}}			Quick links to groupings on the page. Uses the Story Index Navigation template.
-{{ListingTitle}}		Title of whatever the listing is (i.e. "Stories tagged X", "All Authors", etc.)
+{{Navigation}}		Quick links to groupings on the page. Uses the Story Index Navigation template.
+{{ListingTitle}}	Title of whatever the listing is (i.e. "Stories tagged X", "All Authors", etc.)
 {{CurrentlyShowing}}	The "Showing [starting number]-[ending number] of [total]" text, e.g. "Showing 1-10 of 22".
-{{Listings}}			Entries, either in story infoxes, of lists of things like authors/fandoms/etc., plus pagination buttons.
+{{Listings}}		Entries, either in story infoxes, of lists of things like authors/fandoms/etc., plus pagination buttons.
 
 INFOBOX INTERNAL FIELDS (SUMMARY TEMPLATE, FIELD TEMPLATE, BYLINE TEMPLATE, STORY INDEX NAVIGATION, TAGS, ETC.)
 Files: "fields.txt", "summaries.txt", "byline.txt"
-{{L}}					Label (if applicable)
-{{C}}					Content
+{{L}}			Label (if applicable)
+{{C}}			Content
 
 STATS WIDGET TEMPLATE FIELDS
 File: "index.txt"
-{{StoryNumber}}			Total number of stories in the archive.
-{{TotalWordcount}}		Total combined wordcount of all stories in the archive.	
-{{FandomNumber}}		Total number of fandoms across all stories in archive.
-{{AuthorNumber}}		Total number of authors across all stories in archive.
+{{StoryNumber}}		Total number of stories in the archive.
+{{TotalWordcount}}	Total combined wordcount of all stories in the archive.	
+{{FandomNumber}}	Total number of fandoms across all stories in archive.
+{{AuthorNumber}}	Total number of authors across all stories in archive.
 
 
 TO SET ALTERNATIVE FIELD LABELS
@@ -145,38 +145,38 @@ You will need replacement labels for ALL FIELDS, in the order given below.
 If you don't want to change a field's label, just put its default.
 
 CUSTOMIZABLE FIELD LABELS AND DEFAULTS, in order of entry
-Label for...						Default
-Next Page button					"Next Page"
-Previous Page button				"Previous Page"
-Next Chapter button					"Next Chapter"
-Previous Chapter button				"Previous Chapter"
-Table of Contents button			"Table of Contents"
-Fandom field label					"Fandom"
-Author field label					"Author"
-Date Updated field label			"Updated"
-Date Published field label			"Published"
-Wordcount field label				"Words"
-Number of Chapters field label		"Chapters"
-Is/Is not complete field label		"Complete"
-Summary field label					"Summary"
-Tags field label					"Tags"
-Rating field label					"Rating"
-Notes field label					"Notes"
-End Notes field label				"End Notes"
+Label for...			Default
+Next Page button		"Next Page"
+Previous Page button		"Previous Page"
+Next Chapter button		"Next Chapter"
+Previous Chapter button		"Previous Chapter"
+Table of Contents button	"Table of Contents"
+Fandom field label		"Fandom"
+Author field label		"Author"
+Date Updated field label	"Updated"
+Date Published field label	"Published"
+Wordcount field label		"Words"
+Number of Chapters field label	"Chapters"
+Is/Is not complete field label	"Complete"
+Summary field label		"Summary"
+Tags field label		"Tags"
+Rating field label		"Rating"
+Notes field label		"Notes"
+End Notes field label		"End Notes"
 
 CUSTOM RATINGS
-Rating								Default
-G									"G"
-PG									"PG"
-Teen								"T"
-Mature								"MA"
-Explicit/NC-17						"E"
-No rating							"No Rating"
+Rating				Default
+G				"G"
+PG				"PG"
+Teen				"T"
+Mature				"MA"
+Explicit/NC-17			"E"
+No rating			"No Rating"
 
 CUSTOM COMPLETION STATUSES
-Status								Default
-Complete							"Yes"
-Incomplete							"No"
+Status				Default
+Complete			"Yes"
+Incomplete			"No"
 		
 	
 DEFAULT INTERNAL TEMPLATES
@@ -186,6 +186,7 @@ Default Story Infobox Template:
 <h2>
 {{StoryTitle}}
 </h2>
+{{Author}}
 {{Fandom}}
 {{Wordcount}}
 {{Chapters}}
