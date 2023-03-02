@@ -1,10 +1,26 @@
 CHANGELOG
 
+March 1 2023
+	- Scrapped template idea for now.
+	- Working on allowing for a config file! Split parseArgs() into 
+	  parseFolderArgs() and parseArgs() so we get folders and some commands like
+	  --man and --help etc and decide if it's worth building anything first, 
+	  then handle other arguments after checking for config.
+	- Changed "man" and similar commands to a more conventional "--man" etc.
+	- Adding hashsets for faster/more optimized metadata and config settings
+	  parsing.
+	- Planning update story metadata parsing once this is confirmed to work.
+
+November 5
+	- Began working on a new template system, where the whole template is one
+	  single template.html file instead of a dozen scattered .txt files.
+	  This might get scrapped later.
+
 July 24
 	- Fandoms and authors now use an array/hashset system like tags, so multiple
 	  authors and fandoms can be associated with single works.
-	- Altered usage of toTitleCase and tagset to fix capitalization issues caused by
-	  category system ignoring case.
+	- Altered usage of toTitleCase and tagset to fix capitalization issues caused 
+	  by category system ignoring case.
 	- Added initial support for a future chapter notes field.
 	- Added version number to the stats keywords for the homepage.
 	- Added author field to the default story infobox template.

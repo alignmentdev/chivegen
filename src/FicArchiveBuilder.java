@@ -15,7 +15,7 @@ import java.lang.Math;
 
 public class FicArchiveBuilder {
 	// Version string for manual and about text
-	private static String versionString = "v0.2.10";
+	private static String versionString = "v0.2.11";
 
 	/***
 	For input and output folders.
@@ -52,12 +52,16 @@ public class FicArchiveBuilder {
 	private static String[] standardKeywords = new String[] {"Title", "Main", "Footer"};
 	private static String[] storyInfoKeywords = new String[] {"StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
 	"Summary", "IsComplete", "Author", "Tags", "Rating"};
-	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "Pagination"};
+	private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "ChapterPagination"};
 	private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
 	private static String[] chapterPaginationKeywords = new String[] {"Previous", "Next"};
 	private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination"};	
 	private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber", "VersionNumber"};	
 	private static String[] fieldKeywords = new String[] {"L", "C"};
+	
+	private static String[] allKeywords = new String[] {"Title", "Main", "Footer", "StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
+	"Summary", "IsComplete", "Author", "Tags", "Rating", "StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "ChapterPagination", "Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next", "Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination", "L", "C"};
+	
 	
 	// The template objects
 	private static ContentTemplate pageContentTemplate;
@@ -71,6 +75,17 @@ public class FicArchiveBuilder {
 	private static ContentTemplate summaryContentTemplate;
 	private static ContentTemplate byLineContentTemplate;
 	private static ContentTemplate tagContentTemplate;
+	
+	
+	// To use for config
+	// TODO - how to make sure this doesn't override existing settings?
+	private static HashSet<String> validConfigSettingSet;
+	private static String[] validConfigSettingNames = new String[] {"title", "sitename", "footer", "sitepath", "maxitemsperpage", "includestylesheets", "showchapternumbers", "casualhtml", "usebylines", "generatefieldlabels", "ignoreleadingthe", "skipjumppagination", "skipemptyfields", "ignoretabs", "skippage", "statswidget"};
+	
+	// Used to check for a valid metadata field
+	// TODO: make sure hashset gets built, and add public function to return it
+	private static HashSet<String> validStoryMetadataSet;
+	private static String[] validStoryMetadataTypes = new String[] {"title", "fandom", "fandoms", "author", "creator", "summary", "notes", "end notes", "tags", "characters", "words", "length", "wordcount", "rating", "rated", "complete", "date updated", "updated", "date published", "published", "date posted", "posted"};
 	
 	
 	/***
@@ -119,6 +134,11 @@ public class FicArchiveBuilder {
 	// What we should prefix links with when linking from
 	// an arbitrary page to the index
 	private static String sitePath = "/";
+	// TODO: URL customization (not everyone wants "fandom" in their URL)
+	private static String storyDirectoryName = "stories";
+	private static String fandomDirectoryName = "fandom";
+	private static String authorDirectoryName = "author";
+	private static String tagsDirectoryname = "tag";
 	
 	/***
 	Default templates for other page elements. These are overridden if an 
@@ -128,10 +148,10 @@ public class FicArchiveBuilder {
 		"{{Fandom}}\n{{Wordcount}}\n{{Chapters}}\n{{Published}}\n{{Updated}}\n{{Summary}}\n</div>");
 	private static String indexStoryInfoTemplate = storyInfoTemplate;
 	private static String chapterTemplate = ("{{StoryInfo}}\n" + 
-		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{{Pagination}}\n</div>\n" + 
+		"<div class=\"chapter-nav top-nav\"><a href=\"toc.html\">Table of Contents</a>\n{{ChapterPagination}}\n</div>\n" + 
 		"<h3>\n{{ChapterTitle}}\n</h3>\n"  + 
 		"<div class=notes>\n{{StoryNotes}}\n</div>\n" +
-		"{{ChapterBody}}\n<div class=notes>\n{{EndNotes}}\n</div><div class=\"chapter-nav bottom-nav\">\n{{Pagination}}\n</div>");
+		"{{ChapterBody}}\n<div class=notes>\n{{EndNotes}}\n</div><div class=\"chapter-nav bottom-nav\">\n{{ChapterPagination}}\n</div>");
 	private static String chapterPaginationTemplate = "<div class=chapter-pagination>\n{{Previous}}\n{{Next}}\n</div>";
 	private static String paginationTemplate = "<div class=pagination>\n{{Previous}}\n{{JumpPrev}}\n{{JumpCurrent}}\n{{JumpNext}}\n{{Next}}\n</div>";
 	private static String workIndexTemplate = "{{Navigation}}\n<h1>{{ListingTitle}}</h1>\n<h2>{{CurrentlyShowing}}</h2>\n{{Pagination}}<div class=listings>{{Listings}}</div>{{Pagination}}";
@@ -217,22 +237,24 @@ public class FicArchiveBuilder {
 	
 	// Variables for main to decide if certain things should actually be executed.	
 	private static boolean readyToBuild = true; // true if we're ready to build the site, false otherwise
-	private static boolean building = true; // false if the command is something else like man or license
+	private static boolean useConfigFile = true; // true if config is detected and not disabled
+	private static boolean building = true; // false if the command is something else like --man or --license
 	private static boolean archiveHasFandoms = false; // true only if at least one story has a fandom in the metadata
 	private static boolean archiveHasAuthors = false; // true only if at least one story has an author in the metadata
 	private static boolean archiveHasTags = false; // true only if at least one story has tags
 
 	public static void main(String[] args) {
 		long startTime = System.currentTimeMillis(); // Track time it takes for the program to run
-		// Parse the arguments.
-		parseArgs(args);
+		// Parse initial folder arguments
+		parseFolderArgs(args);
+		// Decide if we can build with this input.
 		if (!building) {
 			readyToBuild = false;
 		}
-		else if (inputPath.equals("") || outputPath.equals("")) {
+		else if (building && (inputPath.equals("") || outputPath.equals(""))) {
 			readyToBuild = false;
 			if (args.length == 0) {
-				System.out.println("Need some help? Try 'FicArchiveBuilder man' for the manual.");
+				System.out.println("Need some help? Try 'FicArchiveBuilder --man' for the manual.");
 			}
 			else if (!inputPath.equals("")) {
 				System.out.println("You need to specify an output folder first.");
@@ -244,7 +266,7 @@ public class FicArchiveBuilder {
 				System.out.println("You need to specify input and output folders first.");
 			}
 			else {
-				System.out.println("That doesn't seem to be a valid command. Try 'FicArchiveBuilder man' to check out the manual.");
+				System.out.println("That doesn't seem to be a valid command. Try 'FicArchiveBuilder --man' to check out the manual.");
 			}
 		}
 		// If no template is included in arguments, look for template.html in the input path
@@ -290,7 +312,13 @@ public class FicArchiveBuilder {
 				System.out.println("Error: template file is actually a directory.");
 			}
 		}
+		// If we have decided input and template are valid, build the archive.
 		if (readyToBuild) {
+			validConfigSettingSet = generateHashSetFromArray(validConfigSettingNames);
+			// Read the config file, if it exists.
+			readConfig();
+			// Parse the other arguments, AFTER config has been taken into account.
+			parseArgs(args);
 			// Set some relevant defaults
 			if (skipWorkIndices) {
 				skipFandomIndex = skipTitleIndex = skipAuthorIndex = true;
@@ -298,9 +326,9 @@ public class FicArchiveBuilder {
 			// If Casual HTML is enabled, set up the list of acceptable opening tags to ignore paragraphs for
 			if (casualHTML) {
 				nonParagraphHTMLTags = generateHashSetFromArray(acceptedOpeningHTMLTags);
-			}
+			}			
 			// Turn the template into a string for use in other methods
-			pageTemplate = readFileToString(templateFile);
+			pageTemplate = readFileToString(templateFile);			
 			// Check if various templates exist in the input directory
 			// And override the defaults if so
 			titleTemplate = getTemplateFromFile(new File(input, "pagetitle.txt"), titleTemplate);
@@ -381,7 +409,15 @@ public class FicArchiveBuilder {
 			if (!brief) {
 				System.out.println("Reading tag template...");
 			}
-			tagContentTemplate = buildTemplate(tagTemplate, fieldKeywords);		
+			tagContentTemplate = buildTemplate(tagTemplate, fieldKeywords);				
+			
+			// Set all the templates using the base template and new method
+			// CURRENTLY *NOT* IN USE because this doesn't work yet.
+			// Might remove later.
+			// HashSet<String> globalKeywordSet = generateHashSetFromArray(allKeywords);
+			// TODO - implement after queues are a thing (if that happens)
+			// buildAllTemplates(pageTemplate, globalKeywordSet);
+			
 			// If the output directory doesn't exist, create it
 			if (!output.exists()) {
 				output.mkdirs();
@@ -409,8 +445,11 @@ public class FicArchiveBuilder {
 					if (storyFolders.length == 0) {
 						System.out.println("Warning: no story folders found.");
 					}
-					else if (!brief) {
-						System.out.println("Found " + storyFolders.length + " subfolders in input directory: " + Arrays.toString(storyFolders));
+					else { 					
+						validStoryMetadataSet = generateHashSetFromArray(validStoryMetadataTypes);
+						if (!brief) {
+							System.out.println("Found " + storyFolders.length + " subfolders in input directory: " + Arrays.toString(storyFolders));
+						}
 					}					
 					// Initialize maps for tags, authors, fandoms
 					archiveTagMap = new HashMap<String, ArrayList<Story>>();
@@ -557,6 +596,205 @@ public class FicArchiveBuilder {
 		}
 	}
 	
+	// Quick parse for true/false text
+	public static boolean quickParseTrueFalse(String s, boolean b) {
+		s = s.toLowerCase();
+		if (s.charAt(0) == 't') {
+			return true;
+		}
+		if (s.charAt(0) == 'f') {
+			return false;
+		}
+		if (!brief) {
+			System.out.println("Error: expected 'true' or 'false' but instead found '" + s + "'. Returning default...");
+		}
+		return b; // default to existing value
+	}
+	
+	//TODO - implementing config file
+	public static void readConfig() {
+		File siteConfigFile = new File(input, "config.txt");
+		if (siteConfigFile.exists()) {
+			System.out.println("Config file detected. Config settings will be used unless contradicted by command line arguments.");
+			//read config file
+			// for each line: use a hashset to check that the label is valid, 
+			// then switch statement using 1st char and disambig from there
+			try {
+				Scanner configReader = new Scanner(siteConfigFile);
+				int i = 0; // to track current line number
+				while (configReader.hasNextLine()) {
+					// break input into 2 strings: metadata name, and content
+					String[] currentLineData = configReader.nextLine().split("=", 2);
+					// strip underscores, and force lowercase
+					currentLineData[0] = currentLineData[0].toLowerCase().replace("_", "");
+					if (currentLineData.length > 1) {
+						if (validConfigSettingSet.contains(currentLineData[0])) {
+							// Once we know our field is something in the valid
+							// config settings hashset, we can just narrow it down
+							// by checking a few chars instead of a full string 
+							// comparison. This is a little imprecise, but faster
+							// than checking the full string.
+							switch (currentLineData[0].charAt(0)) {
+								case 'c':
+									casualHTML = quickParseTrueFalse(currentLineData[1], casualHTML);
+									break;
+								case 'f':
+									footerTemplate = currentLineData[1];
+									break;
+								case 'g':
+									generateInfoBoxTemplateFields = quickParseTrueFalse(currentLineData[1], 
+									generateInfoBoxTemplateFields);
+									break;
+								case 'i':
+									if (currentLineData[0].charAt(1) == 'n') {
+										includeStyleSheets = quickParseTrueFalse(currentLineData[1], 
+										includeStyleSheets);
+									}
+									else if (currentLineData[0].charAt(6) == 'l') {
+										ignoreLeadingThe = quickParseTrueFalse(currentLineData[1], 
+										ignoreLeadingThe);
+									}
+									else {
+										ignoreTabs = quickParseTrueFalse(currentLineData[1], ignoreTabs);
+									}
+									break;
+								case 'm':
+									try {
+										maxItemsPerPage = Integer.parseInt(currentLineData[1]);
+									} catch (NumberFormatException e) {
+										maxItemsPerPage = 20;
+										System.out.println("Error: maxItemsPerPage cannot be '" + 
+										currentLineData[1] + "'. Leaving as default (20).");
+									}
+									break;
+								case 's':
+									// si...
+									if (currentLineData[0].charAt(1) == 'i') {
+										if (currentLineData[0].charAt(4) == 'p') {
+											sitePath = currentLineData[1];
+										}
+										else if (currentLineData[0].charAt(4) == 'n') {
+											siteName = currentLineData[1];
+										}
+									}
+									// sh...
+									else if (currentLineData[0].charAt(1) == 'h') {
+										showChapterNumbers = quickParseTrueFalse(currentLineData[1], 
+										showChapterNumbers);
+									}
+									// sk(ip)...
+									else if (currentLineData[0].charAt(1) == 'k') {
+										if (currentLineData[0].charAt(4) == 'e') {
+											skipEmptyFields = quickParseTrueFalse(currentLineData[1],
+											skipEmptyFields);
+										}
+										else if (currentLineData[0].charAt(4) == 'j') {
+											skipJumpPagination = quickParseTrueFalse(currentLineData[1],
+											skipJumpPagination);
+										}
+										else if (currentLineData[0].charAt(4) == 'p') {
+											String[] pagesToSkip = currentLineData[1].split(",");
+											for (String s : pagesToSkip) {
+												s = s.toLowerCase();
+												skipHomepage = s.equals("home");
+												skipWorkIndices = s.equals("all");
+												skipFandomIndex = s.equals("fandom");
+												skipTitleIndex = s.equals("title");
+												skipLatestIndex = s.equals("latest");
+												skipAuthorIndex = s.equals("author");
+												skipTagPages = s.equals("tags");
+											}
+										}
+									}
+									// st...
+									else if (currentLineData[0].charAt(1) == 't') {
+										homePageStatsWidget = quickParseTrueFalse(currentLineData[1],
+										homePageStatsWidget);
+									}
+									break;
+								case 't':
+									titleTemplate = currentLineData[1];
+									break;
+								case 'u':
+									useByLine = quickParseTrueFalse(currentLineData[1], useByLine);
+									break;
+								default:
+									// does nothing
+							}
+						}
+						else {
+							System.out.println("Error: malformed or unrecognized setting name on line " + i + 
+							"of config.txt: '" + currentLineData[0] + "'.");
+						}
+					}
+				}
+			} catch (FileNotFoundException e) {
+				System.out.println("Error: config file was detected, but found missing.");
+			}
+		}
+		else {
+			useConfigFile = false;
+		}
+	}
+	
+	// Looks at args to get input and output folders
+	// TODO: WIP - make sure this works!!
+	public static void parseFolderArgs(String[] args) {
+		// Print a warning if there are no arguments given
+		if (args.length == 0) {
+			building = false;
+			System.out.println("You must supply at least one argument. Try 'man' if you need the manual.");
+		}
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals("-i") || args[i].equals("-input")) {
+				if (i == args.length - 1) { // If this is the last argument, report an error
+					System.out.println("Error: argument " + args[i] + " was given, but no input was supplied.");
+					building = false; // don't continue with no input folder
+				}
+				else { // Otherwise, take the next argument as input, and skip it next iteration
+					inputPath = args[i+1];
+					i++;
+				}
+			}
+			else if (args[i].equals("-o") || args[i].equals("-output")) {
+				if (i == args.length - 1) {
+					System.out.println("Error: argument " + args[i] + " was given, but no output location was supplied.");
+					building = false; // don't continue w/o output location either
+				}
+				else {
+					outputPath = args[i+1];
+					i++;
+				}
+			}
+			else if (args[i].equals("-t") || args[i].equals("-template")) {
+				if (i == args.length - 1) {
+					System.out.println("Error: argument " + args[i] + " was given, but no template location was supplied.");
+				}
+				else {
+					templatePath = args[i+1];
+					i++;
+				}
+			}
+			else if (args[i].equals("--no-config")) {
+				useConfigFile = false;
+			}
+			else if (args[i].equals("--man") || args[i].equals("--help")) {
+				building = false;
+				printManual();
+				break; // ignore further arguments
+			}
+			else if (args[i].equals("--license")) {
+				building = false;
+				printLicense();
+				break; // ignore further arguments
+			}
+			else if (args[i].equals("--credits") || args[i].equals("--about")) {
+				building = false;
+				printCredits();
+				break; // ignore further arguments
+			}
+		}
+	}
 	
 	// Parses the argument list for main, and sets a number of variables
 	// based on this input.
@@ -564,10 +802,11 @@ public class FicArchiveBuilder {
 		// Print a warning if there are no arguments given
 		if (args.length == 0) {
 			building = false;
-			System.out.println("You must supply at least one argument. Try 'man' if you need the manual.");
+			System.out.println("You must supply at least one argument. Try '--help' if you need the manual.");
 		}
 		// Go through the arguments in order and read them
 		for (int i = 0; i < args.length; i++) {
+			/***
 			if (args[i].equals("-i") || args[i].equals("-input")) {
 				if (i == args.length - 1) { // If this is the last argument, report an error
 					System.out.println("Error: argument " + args[i] + " was given, but no input was supplied.");
@@ -595,7 +834,7 @@ public class FicArchiveBuilder {
 					i++;
 				}
 			}
-			else if (args[i].equals("-s") || args[i].equals("-site-name")) {
+			else***/ if (args[i].equals("-s") || args[i].equals("-site-name")) {
 				if (i == args.length - 1) {
 					System.out.println("Error: argument " + args[i] + " was given, but no site name was supplied.");
 				}
@@ -711,23 +950,24 @@ public class FicArchiveBuilder {
 			else if (args[i].equals("--show-auto-dates")) {
 				showDefaultDates = true;
 			}
-			else if (args[i].equals("man") || args[i].equals("help")) {
+			/***else if (args[i].equals("--man") || args[i].equals("--help")) {
 				building = false;
 				printManual();
 				break; // ignore further arguments
 			}
-			else if (args[i].equals("license")) {
+			else if (args[i].equals("--license")) {
 				building = false;
 				printLicense();
 				break; // ignore further arguments
 			}
-			else if (args[i].equals("credits") || args[i].equals("about")) {
+			else if (args[i].equals("--credits") || args[i].equals("--about")) {
 				building = false;
 				printCredits();
 				break; // ignore further arguments
-			}
+			}***/
 		}
 	}
+	
 	
 	// Returns either the string contents of the File argument, or the original
 	// String argument if no such File exists.
@@ -792,7 +1032,8 @@ public class FicArchiveBuilder {
 				ratingLevelE = ratingsReader.nextLine();
 				ratingLevelNR = ratingsReader.nextLine();
 			} catch (NoSuchElementException e) {
-				System.out.println("Error: reached the end of the ratings file too early. Make sure all ratings are accounted for!");
+				System.out.println("Error: reached the end of the ratings file too early. " + 
+				"Make sure all ratings are accounted for. If you want to not include one, put a blank line!");
 				ratingsReader.close();
 				return; // stop trying to read the file
 			}
@@ -832,6 +1073,89 @@ public class FicArchiveBuilder {
 		}
 		return map;
 	}
+	
+	
+	// An alternate way to read in templates all from one file string.
+	// Not yet working because APPARENTLY java doesn't have a working built in queue?? this is sofuckingstupid
+	/***
+	public static void buildAllTemplates(String baseTemplate, HashSet<String> keywords) {
+		// keywords: {Page + all other keywords that exist}
+		// Map of named templates ready to be converted into ContentTemplates
+		HashMap<String, String> readyTemplates = new HashMap<String, String>();
+		// Queues so we don't have to do stupid recursive stuff to scan all the nested templates
+		Queue<String> unreadTemplates = new Queue<String>();
+		Queue<String> unreadTemplateNames = new Queue<String>();
+		// Stringbuilders for the current out and inner templates
+		StringBuilder currentTemplateString = new StringBuilder();
+		StringBuilder innerTemplateString = new StringBuilder();
+		// The current template chunk being looked at by the scanner
+		String currentChunk = "";
+		// The current inner template being read and put into a new string for the queue
+		String templateName = "";
+		// Start by putting the base page template into the queue to find all relevant subtemplates
+		unreadTemplates.add(baseTemplate);
+		unreadTemplateNames.add("GLOBAL");
+		// Keep looping as long as there are strings in the queues
+		while (unreadTemplates.peek() != null && unreadTemplateNames.peek() != null) {
+			// if the string is empty, skip to the next loop
+			if (unreadTemplates.peek() == "" || unreadTemplateNames.peek() == "") {
+				unreadTemplates.remove();
+				unreadTemplateNames.remove();
+				continue; 
+			}
+			// Remove the newest string and start scanning it
+			Scanner temp = new Scanner(unreadTemplates.remove());
+			temp.useDelimiter(templateDelimiters);
+			// Scan the template string
+			while (temp.hasNext()) {
+				currentChunk = temp.next();
+				// If a keyword is found
+				if (keywords.contains(currentChunk)) {
+					templateName = currentChunk;
+					// Preserve the initial {{Keyword}} in the template
+					currentTemplateString.append("{{" + templateName + "}}");
+					// Start a subloop to collect the inner template
+					// Switch to looking exclusively for the end of another template
+					temp.useDelimiter("{{/" + templateName + "}}");
+					if (temp.hasNext()) {
+						innerTemplateString.append(temp.next());
+					}
+					System.out.println("Added template to queue: {{" + templateName + "}} (" + innerTemplateString.length() + " characters)");
+					// add the new template and name to the queue,
+					unreadTemplates.add(innerTemplateString.toString());
+					unreadTemplateNames.add(templateName);
+					// empty stringbuilder for reuse
+					innerTemplateString.delete(0, innerTemplateString.length());
+					// go back to normal matching pattern
+					temp.useDelimiter(templateDelimiters);
+				}
+				// If our current chunk isn't another template, just keep reading 
+				// until we reach the end of the string
+				else {
+					currentTemplateString.append(currentChunk);
+				}
+			}
+			// Add the finished template string and its associated keyword name
+			// to the readyTemplates hashmap
+			readyTemplates.put(unreadTemplateNames.remove(), currentTemplateString.toString());
+			// Clear the stringbuilder and close the scanner
+			currentTemplateString.delete(0, currentTemplateString.length());
+			temp.close();
+		}
+		// Build the templates from the relevant strings
+		pageContentTemplate = buildTemplate(readyTemplates.get("Page"), standardKeywords);
+		chapterContentTemplate = buildTemplate(readyTemplates.get("Chapter"), chapterKeywords);
+		chapterPaginationContentTemplate = buildTemplate(readyTemplates.get("ChapterPagination"), chapterPaginationKeywords);
+		infoBoxContentTemplate = buildTemplate(readyTemplates.get("StoryInfo"), storyInfoKeywords);
+		indexInfoBoxContentTemplate = buildTemplate(readyTemplates.get("Listings"), storyInfoKeywords);
+		fieldContentTemplate = buildTemplate(readyTemplates.get("Field"), fieldKeywords);
+		summaryContentTemplate = buildTemplate(readyTemplates.get("SummaryField"), fieldKeywords);
+		byLineContentTemplate = buildTemplate(readyTemplates.get("Byline"), fieldKeywords);
+		tagContentTemplate = buildTemplate(readyTemplates.get("Tag"), fieldKeywords);
+		workIndexContentTemplate = buildTemplate(readyTemplates.get("WorkIndex"), workIndexKeywords);
+		paginationContentTemplate = buildTemplate(readyTemplates.get("Pagination"), paginationKeywords);
+	}
+	***/
 	
 	// Builds a ContentTemplate object based on the template string and an array
 	// of keywords, using a temporary <String, Integer> hashmap to speed up 
@@ -1568,6 +1892,11 @@ public class FicArchiveBuilder {
 		return verbose;
 	}
 	
+	// Get the valid set of story metadata (for faster parsing)
+	public static HashSet<String> getValidStoryMetadataSet() {
+		return validStoryMetadataSet;
+	}
+	
 	// Returns the story infobox template
 	public static ContentTemplate getInfoBoxTemplate() {
 		return infoBoxContentTemplate;
@@ -1639,6 +1968,7 @@ public class FicArchiveBuilder {
 	}
 	
 	// Returns the string version of the 'last tag' template.
+	// May be deprecated later since CSS makes this redundant.
 	public static String getTagLastTemplate() {
 		return tagLastTemplate;
 	}
@@ -1852,7 +2182,7 @@ public class FicArchiveBuilder {
 	public static void printManual() {
 		System.out.println("\nCHIVEGEN ALPHA: FANFIC ARCHIVE BUILDER " + versionString);
 		System.out.println("\nBasic command structure:");
-		System.out.println("FicArchiveBuilder -i INPUT -o OUTPUT [... other options go here ...]");
+		System.out.println("java FicArchiveBuilder -i INPUT -o OUTPUT [... other options go here ...]");
 		System.out.println("\nREQUIRED PARAMETERS");
 		System.out.println("-i, -input\t\tSpecify input folder.");
 	//	System.out.println("-t, -template\t\tSpecify template file or folder.");
@@ -1885,11 +2215,11 @@ public class FicArchiveBuilder {
 		System.out.println("-v, --verbose\t\tVerbose mode. Shows extra print statements.\n\t\t\t(Warning! May show a LOT of text, depending on what I've\n\t\t\tremembered to comment out.)");
 		System.out.println("-b, --brief\t\tBrief mode. Show fewer print statements.");
 		System.out.println("\nOTHER COMMANDS");
-		System.out.println("man, help\t\tPrints the manual. (You probably know this one.)");
-		System.out.println("about, credits\t\tPrints the credits.");
-		System.out.println("license\t\t\tPrints the license. (Not properly implemented yet.)");
+		System.out.println("--man, --help\t\tPrints the manual. (You probably know this one.)");
+		System.out.println("--about, --credits\tPrints the credits.");
+		System.out.println("--license\t\tPrints the license. (Not properly implemented yet.)");
 	//	System.out.println("-it, --ignore-tabs\tDon't bother indenting input text inside the main div.");
-		System.out.println("\nThere are no docs at the moment, but when there are I'll link them.\n");
+		System.out.println("\nThere are no public docs at the moment, but when there are I'll link them.\n");
 	}
 	
 	// Prints the license.

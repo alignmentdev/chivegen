@@ -112,10 +112,13 @@ public class Story {
 		// etc
 		File storyDataFile = new File(inputFolder, "storyinfo.txt");
 		if (storyDataFile.exists()) {
+			//read config file
+			// for each line: use a hashset to check that the label is valid, 
+			// then switch statement using 1st char and disambig from there
 			hasStoryDataFile = true;
 			try {
 				Scanner storyDataReader = new Scanner(storyDataFile);
-				int i = 0;
+				int i = 0; // track current line for error reporting
 				if (FicArchiveBuilder.isVerbose()) {
 					System.out.println("Getting story metadata from file...");
 				}
