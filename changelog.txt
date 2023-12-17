@@ -1,22 +1,41 @@
 CHANGELOG
 
-March 1 2023
+2023 August 1
+	- Fixed pagination generation bugs that caused incorrect page numbers,
+	  duplicate pagination, and was mangling certain preset URLs.
+	- Replaced the agonizingly stupid method for printing numbers with commas.
+	- Shifted a few methods around in Story so they now return values instead
+	  of directly setting variables to those values.
+	- Added some setting functions for Story.
+	- Updated version string to 0.2.12.
+	- Updated a few error messages to better reflect new syntax for options.
+	- Added an experimental option for a custom string instead of just "/" 
+	  dividing a category from the paginated subpages, so instead of just 
+	  /tags/tag/1.html you could also have tags/tag_1.html (for easier 
+	  uploading on some sites). Still need to make some other link generation
+	  code reflect this though.
+
+2023 March 1
 	- Scrapped template idea for now.
-	- Working on allowing for a config file! Split parseArgs() into 
-	  parseFolderArgs() and parseArgs() so we get folders and some commands like
-	  --man and --help etc and decide if it's worth building anything first, 
-	  then handle other arguments after checking for config.
+	- Implemented a rudimentary config file! 
+	- Split parseArgs() into parseFolderArgs() and parseArgs() so we get 
+	  folders and some commands like --man and --help etc and decide if it's 
+	  worth building anything first, then handle other arguments after checking
+	  for config.
 	- Changed "man" and similar commands to a more conventional "--man" etc.
 	- Adding hashsets for faster/more optimized metadata and config settings
 	  parsing.
-	- Planning update story metadata parsing once this is confirmed to work.
+	- Updated story metadata parsing to mostly use a quick hashset check and a
+	  switch statement with a few char comparisons instead of a bunch of if-elses 
+	  and full string comparisons. Hopefully it might be a tiny bit faster than
+	  before? Probably negligible tbh.
 
-November 5
+2022 November 5
 	- Began working on a new template system, where the whole template is one
 	  single template.html file instead of a dozen scattered .txt files.
 	  This might get scrapped later.
 
-July 24
+2022 July 24
 	- Fandoms and authors now use an array/hashset system like tags, so multiple
 	  authors and fandoms can be associated with single works.
 	- Altered usage of toTitleCase and tagset to fix capitalization issues caused 
@@ -26,7 +45,7 @@ July 24
 	- Added author field to the default story infobox template.
 	- Updated version string to 0.2.10
 
-June 20
+2022 June 20
 	- First upload to github!
 	- Removed caching of field template in createInfoBoxContentArray in Story,
 	  since it is no longer needed.
@@ -41,7 +60,7 @@ June 20
 	- Split story infoboxes into two templates for use in story and index
 	- Changed index-building function to include pagination in the template
 
-June 9
+2022 June 9
 	- Fixed bug that caused visible gaps in title structure for 
 	  single-chapter works.
 	- Implemented reading in of a chapter pagination template from file.

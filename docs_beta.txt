@@ -10,7 +10,30 @@ For a better functioning, nicer archive, you should also add:
 		- A file called "storyinfo.txt", with information about the story in question (see STORYINFO.TXT - RECOGNIZED FIELDS)
 		- Optionally, a file called "toc.txt" with the titles of the story's chapters. You do not need to number the titles. They will be applied in order automatically.
 	- A file "index.txt", which contains the text of your homepage. (News, stats widgets, etc.)
+	- A file "config.txt", for any settings you want to apply every time you generate your archive.
 For some customization of your site's style, you may also want to add other templating files to the root of your input directory, as specified under "INPUT FILENAMES FOR CUSTOM TEMPLATES."
+
+
+CONFIG.TXT
+
+The following are valid settings for use in config files. Names are not case sensitive.
+Starting a line with # should comment it out.
+
+casualhtml		Whether or not to use "Casual HTML" (inserting paragraph and line break tags automatically). Default is false.
+footer			Footer template.
+generatefieldlabels	Automatic generation of labels for story metadata fields. Default is true. If turned off, labels will have to be hardcoded into template.
+ignoreleadingthe	When sorting alphabetically, ignore an initial "the". Default is false.
+includestylesheets	Copy over any CSS stylesheets found in the input folder. Default is true.
+maxitemsperpage		How many stories to show on a single page. Default is 20.
+title			Site page title template.
+showchapternumbers	Show chapter names as "Chapter [N]: Name of Chapter". Default is true.
+sitename		Name of website, used in some places (like page titles) automatically
+sitepath		Path all internal links should be prefaced with. Default is "/".
+skipemptyfields		Skip generating labels and placeholders for empty metadata fields in infoboxes. Default is false.
+skipjumppagination	Don't generate jump pagination on indexes. Default is false.
+skippage		Skip generating a given index page. Options are: all (all indexes), home (homepage), fandom, title, latest, author, and tags. Multiple indexes can be specified, separated by commas.
+statswidget		Show the archive stats widget on the homepage. Default is true.
+usebylines		Use the format "by [name]" instead of "author: [name]" for authors. Default is false.
 
 
 STORYINFO.TXT - RECOGNIZED FIELDS & ASSOCIATED INFOBOX TEMPLATE FIELDS
@@ -19,6 +42,8 @@ Title: 								{{StoryTitle}}
 Summary: 							{{Summary}}
 Notes: 								{{StoryNotes}}
 	Notes are not displayed in the infobox, but as part of the first chapter's page -- see CHAPTER TEMPLATE FIELDS.
+End Notes:
+	Same as regular Notes, but displayed on the last chapter's page.
 Fandom: 							{{Fandom}}
 Author: / Creator: 						{{Author}}
 Published: / Date Published: / Posted: / Date Posted: 		{{Published}}
@@ -70,7 +95,7 @@ CASUAL HTML AND HOW TO USE IT
 Casual HTML basically fills in line break and paragraph tags for you, but leaves any existing HTML alone.
 It also detects lines that begin either with paragraph tags, or with certain non-paragraph tags such as <div> and <img>, and does not put unnecessary paragraph tags around them.
 
-The full list of starting strings that will prevent automatic formatting is: "<br", "<hr", "<h", "</", "<di", "<im", "<if", "<bl", "<li", "<ol", "<ul", "<ta", "<tr", "<td", "<th", and "<no". The last entry, "<no>", is specific to ChiveGen and meant to serve as a catchall for "don't format this".
+The full list of starting strings that will prevent automatic formatting is: "<br", "<hr", "<h", "</", "<di", "<im", "<if", "<bl", "<li", "<ol", "<ul", "<ta", "<tr", "<td", "<th", and "<no". The last entry, "<no>", is meant to serve as a catchall for "don't format this".
 
 
 TEMPLATING FIELDS FOR CUSTOM TEMPLATES
@@ -103,7 +128,7 @@ File: "chapter.txt"
 {{StoryNotes}}		Author's notes, derived from the notes field in storyinfo.txt
 {{ChapterBody}}		Main text of the chapter.
 {{EndNotes}}		Author's end notes, derived from the end notes field in storyinfo.txt
-{{Pagination}}		The "Previous Chapter" / "Next Chapter" buttons. (Note that these use a different template from general pagination.)
+{{ChapterPagination}}	The "Previous Chapter" / "Next Chapter" buttons. (Note that these use a different template from general pagination.)
 
 PAGINATION TEMPLATE FIELDS
 Not to be confused with chapter pagination.
@@ -209,7 +234,7 @@ by {{C}}
 Default Chapter Template:
 {{StoryInfo}} 
 <div class="chapter-nav top-nav"><a href="toc.html">Table of Contents</a>
-{{Pagination}}
+{{ChapterPagination}}
 </div> 
 <h3>
 {{ChapterTitle}}
@@ -219,7 +244,7 @@ Default Chapter Template:
 </div>
 {{ChapterBody}}
 <div class="chapter-nav bottom-nav">
-{{Pagination}}
+{{ChapterPagination}}
 </div>
 
 Default Pagination Template

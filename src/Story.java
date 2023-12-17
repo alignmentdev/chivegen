@@ -59,7 +59,13 @@ public class Story {
 	private String storyInfo = "";
 	private String indexStoryInfo = "";
 
+	// Build a new story from an input folder and output folder
 	public Story(File inputFolder, File outputFolder) {
+		// First, check if inputFolder is actually a folder, or an HTML file.
+		// (Might change how this works later.)
+		if (!inputFolder.isDirectory()) {
+			System.out.println("Error: " + inputFolder.getPath() + " is not a directory.");
+		}
 		// Set output folder with same name as input, but in output path
 		storyOutputFolder = new File(outputFolder, inputFolder.getName());
 		// Accept all files following the pattern of "ch[...].txt" as chapters
@@ -69,7 +75,14 @@ public class Story {
 		}
 		});
 		if (chapters.length < 1) {
-			System.out.println("Warning: no chapter files found in folder " + inputFolder.getPath());
+			File storyHTMLFile = new File(inputFolder + "/story.html");
+			if (storyHTMLFile.exists() && !storyHTMLFile.isDirectory()) {
+				//TODO
+				// parse as an ao3 story file...
+			}
+			else {
+				System.out.println("Warning: no chapter files found in folder " + inputFolder.getPath());
+			}
 		}
 		Arrays.sort(chapters);
 		if (FicArchiveBuilder.isVerbose()) {
@@ -120,7 +133,7 @@ public class Story {
 				Scanner storyDataReader = new Scanner(storyDataFile);
 				int i = 0; // track current line for error reporting
 				if (FicArchiveBuilder.isVerbose()) {
-					System.out.println("Getting story metadata from file...");
+					System.out.println("Getting story metadata from storyinfo.txt...");
 				}
 				while (storyDataReader.hasNextLine()){
 					i++;
@@ -132,73 +145,81 @@ public class Story {
 							// Using the text before the colon as the key
 							// The key is converted to lowercase before adding, to avoid case issues
 							currentLineData[0] = currentLineData[0].toLowerCase();
-							if (currentLineData[0].equals("title")) {
-								storyTitle = currentLineData[1];
-							}
-							else if (currentLineData[0].equals("fandom") || currentLineData[0].equals("fandoms")) {
-								fandoms = currentLineData[1].split(", ");
-								for (String fandom : fandoms) {
-									fandomHashSet.add(fandom.toLowerCase()); // ignore case for hashsets
+							// Check if our metadata's field name is valid, and if so
+							// figure out which field it is.
+							if (FicArchiveBuilder.getValidStoryMetadataSet().contains(currentLineData[0])) {
+								// Since we know it's only a few possibilities
+								// we can just check a few chars instead of the
+								// whole string
+								switch (currentLineData[0].charAt(0)) {
+									case 'a':
+										parseAsAuthor(currentLineData[1]);
+										break;
+									case 'c':
+										// creator
+										if (currentLineData[0].charAt(1) == 'r') {
+											parseAsAuthor(currentLineData[1]);
+										}
+										else if (currentLineData[0].charAt(1) == 'o') {
+											// completion status is dealt with later
+											break;
+										}
+										// characters
+										else {
+											parseAsTags(currentLineData[1]);
+										}
+										break;
+									case 'd':
+										// date ...
+										if (currentLineData[0].charAt(5) == 'u') {
+											// updated
+											parseAsDateUpdated(currentLineData[1]);
+										}
+										else { // published, posted
+											parseAsDatePublished(currentLineData[1]);
+										}
+										break;
+									case 'e': // end notes
+										storyEndNotes = currentLineData[1];
+										break;
+									case 'f':
+										parseAsFandom(currentLineData[1]);
+										break;
+									case 'l': // length
+										wordcount = parseAsWordcount(currentLineData[1], inputFolder.getName());
+										break;
+									case 'n':
+										storyNotes = currentLineData[1];
+										break;
+									case 'p': // published, posted
+										parseAsDatePublished(currentLineData[1]);
+										break;
+									case 'r': //rating, rated
+										storyRating = parseAsRating(currentLineData[1]);
+										break;
+									case 's':
+										summary = currentLineData[1];
+										break;
+									case 't':
+										// tags
+										if (currentLineData[0].charAt(1) == 'a') {
+											parseAsTags(currentLineData[1]);
+										}
+										else { // title
+											storyTitle = currentLineData[1];
+										}
+										break;
+									case 'u': // updated
+										parseAsDateUpdated(currentLineData[1]);
+										break;
+									case 'w': //words, wordcount
+										wordcount = parseAsWordcount(currentLineData[1], inputFolder.getName());
+										break;
+									default:
+										// do nothing
 								}
-								hasFandom = true;
 							}
-							else if (currentLineData[0].equals("author") || currentLineData[0].equals("creator")) {
-								authors = currentLineData[1].split(", ");
-								for (String author : authors) {
-									authorHashSet.add(author.toLowerCase()); // ignore case for hashsets
-								}
-								FicArchiveBuilder.setHasAuthors(true);
-								hasAuthor = true;
-							}
-							else if (currentLineData[0].equals("summary")) {
-								summary = currentLineData[1];
-							}
-							else if (currentLineData[0].equals("notes")) {
-								storyNotes = currentLineData[1];
-							}
-							else if (currentLineData[0].equals("end notes")) {
-								storyEndNotes = currentLineData[1];
-							}
-							else if (currentLineData[0].equals("tags") || currentLineData[0].equals("characters")) {
-								// Read tags as a comma-separated list, and put them in the array and the hashset
-								storyTags = currentLineData[1].split(", ");
-								for (String tag : storyTags) {
-									storyTagSet.add(tag.toLowerCase()); // ignore case for tagsets
-								}
-								hasTags = true;
-								FicArchiveBuilder.setHasTags(true);
-							}
-							else if (currentLineData[0].equals("words") || currentLineData[0].equals("length")) {
-								currentLineData[1] = currentLineData[1].replace(",", ""); // strip commas
-								currentLineData[1] = currentLineData[1].replace("\\s", ""); // strip whitespace
-								try {
-									wordcount = Integer.parseInt(currentLineData[1]);
-								} catch (IllegalArgumentException e) {
-									System.out.println("Error: wordcount for story in folder " + inputFolder.getName() + 
-									" was improperly formatted and could not be parsed. Wordcount will be counted automatically instead.");
-									wordcount = -1;
-								}
-							}
-							else if (currentLineData[0].equals("rating") || currentLineData[0].equals("rated")) {
-								// Interpret the rating as a Rating enum value
-								String r = currentLineData[1].toLowerCase();
-								if (r.equals("g") || r.equals("k")) {
-									storyRating = Rating.G;
-								}
-								else if (r.equals("pg") || r.equals("k+")) {
-									storyRating = Rating.PG;
-								}
-								else if (r.equals("t") || r.equals("teen")) {
-									storyRating = Rating.TEEN;
-								}
-								else if (r.equals("m") || r.equals("ma") || r.equals("mature")) {
-									storyRating = Rating.MATURE;
-								}
-								else if (r.equals("e") || r.equals("x") || r.equals("nc-17") || r.equals("explicit")) {
-									storyRating = Rating.EXPLICIT;
-								}
-							}
-							else if (currentLineData[0].equals("complete")) {
+							if (currentLineData[0].equals("complete")) {
 								if (currentLineData.length == 1) { // if the line is just "complete", treat it like "complete: true"
 									isComplete = true;
 								}
@@ -212,25 +233,6 @@ public class Story {
 									}
 								}
 								hasCompletionStatus = true;
-							}
-							else if (currentLineData[0].equals("updated") || currentLineData.equals("date updated")) {
-								try {
-									updated = LocalDate.parse(currentLineData[1].replaceAll("\\s", "")); //strip whitespace just in case
-									hasDateUpdated = true;
-								} catch (DateTimeParseException e) {
-									printInvalidDateWarning("updated");
-									hasDateUpdated = false;
-								}
-							}
-							else if (currentLineData[0].equals("published") || currentLineData[0].equals("posted") ||
-							currentLineData[0].equals("date published") || currentLineData[0].equals("date posted")) {
-								try {
-									published = LocalDate.parse(currentLineData[1].replaceAll("\\s", ""));
-									hasDatePublished = true;
-								} catch (DateTimeParseException e) {
-									printInvalidDateWarning("published");
-									hasDatePublished = false;
-								}
 							}
 						} catch (IndexOutOfBoundsException e) {
 							System.out.println("Error: badly formatted metadata entry in line " + i + " of " + storyDataFile.getPath() + "");
@@ -294,8 +296,8 @@ public class Story {
 				}
 			}
 			else {
-				// use metadata from input folder
-				setDatesFromMetadata(inputFolder);
+				// use metadata from input folder. NOT CURRENTLY WORKING
+				// setDatesFromMetadata(inputFolder);
 			}
 		}
 		// If no valid wordcount is supplied in file, get it manually
@@ -307,6 +309,95 @@ public class Story {
 			storyInfo = buildStoryInfoBox();
 			indexStoryInfo = buildIndexStoryInfoBox();
 		}	
+	}
+	
+	// Parses fandom data
+	public void parseAsFandom(String f) {
+		fandoms = f.split(", ");
+		for (String fandom : fandoms) {
+			fandomHashSet.add(fandom.toLowerCase()); // ignore case for hashsets
+		}
+		hasFandom = true;
+	}
+	
+	// Parses author data
+	public void parseAsAuthor(String a) {
+		authors = a.split(", ");
+		for (String author : authors) {
+			authorHashSet.add(author.toLowerCase()); // ignore case for hashsets
+		}
+		hasAuthor = true;
+		// tell main we have at least 1 author
+		FicArchiveBuilder.setHasAuthors(true);
+	}
+	
+	// Parse a string as a rating and return it
+	public Rating parseAsRating(String r) {
+		// Interpret the rating as a Rating enum value
+		r = r.toLowerCase();
+		if (r.equals("g") || r.equals("k") || r.equals("generalaudiences")) {
+			return Rating.G;
+		}
+		else if (r.equals("pg") || r.equals("k+")) {
+			return Rating.PG;
+		}
+		else if (r.equals("t") || r.equals("teen")) {
+			return Rating.TEEN;
+		}
+		else if (r.equals("m") || r.equals("ma") || r.equals("mature")) {
+			return Rating.MATURE;
+		}
+		else if (r.equals("e") || r.equals("x") || r.equals("nc-17") || r.equals("explicit")) {
+			return Rating.EXPLICIT;
+		}
+		// if it's not any other rating, it's unrated
+		return Rating.UNRATED;
+	}
+	
+	// Parse string as wordcount
+	public int parseAsWordcount(String w, String wordcountFolderName) {
+		w = w.replace(",", "").replace("\\s", ""); // strip whitespace and commas
+		try {
+			int wc = Integer.parseInt(w);
+			return wc;
+		} catch (IllegalArgumentException e) {
+			System.out.println("Error: wordcount for story in folder " + wordcountFolderName + 
+			" was improperly formatted and could not be parsed. Wordcount will be counted automatically instead.");
+			return -1;
+		}
+	}
+	
+	// Parse a string as tags
+	public void parseAsTags(String t) {
+		// Read tags as a comma-separated list, and put them in the array and the hashset
+		storyTags = t.split(", ");
+		for (String tag : storyTags) {
+			storyTagSet.add(tag.toLowerCase()); // ignore case for tagsets
+		}
+		hasTags = true;
+		// tell ficarchivebuilder we have at least 1 tag
+		FicArchiveBuilder.setHasTags(true);
+	}
+	
+	// Parse string as update date
+	public void parseAsDateUpdated(String u) {
+		try {
+			updated = LocalDate.parse(u.replaceAll("\\s", "")); //strip whitespace just in case
+			hasDateUpdated = true;
+		} catch (DateTimeParseException e) {
+			printInvalidDateWarning("updated");
+			hasDateUpdated = false;
+		}
+	}
+	
+	public void parseAsDatePublished(String p) {
+		try {
+			published = LocalDate.parse(p.replaceAll("\\s", ""));
+			hasDatePublished = true;
+		} catch (DateTimeParseException e) {
+			printInvalidDateWarning("published");
+			hasDatePublished = false;
+		}
 	}
 	
 	// Gets the date string. If defaultDate is true, the date was autofilled
@@ -328,6 +419,7 @@ public class Story {
 	// Gets dates from the file attributes, if no dates are given
 	// Published and created should be potentially different dates, but this
 	// doesn't seem to work currently. Might be a Linux-specific issue?
+	/***
 	public void setDatesFromMetadata(File inputStoryFolder) {
 		try {
 			BasicFileAttributes storyFolderAttributes = Files.readAttributes(Paths.get(inputStoryFolder.getPath()), BasicFileAttributes.class);
@@ -349,6 +441,7 @@ public class Story {
 			e.printStackTrace();
 		}
 	}
+	***/
 	
 	// Reads through all chapter files to get a total story wordcount.
 	public int countWords() {
@@ -491,7 +584,7 @@ public class Story {
 		FicArchiveBuilder.getRatingString(storyRating)};
 	}
 	
-	// Creates chapter content arrays
+	// Creates content arrays for chapter pages
 	public String[] createChapterContentArray(int chapterNumber) {
 		// Fields: infobox, chapter title, chapter body, pagination (top and bottom)
 		if (FicArchiveBuilder.isVerbose()) {
@@ -601,7 +694,9 @@ public class Story {
 		String linkURL = "#";
 		for (int i = 0; i < arrayField.length; i++) {
 			if (!skipCategoryPages) {
-				linkURL = FicArchiveBuilder.getSitePath() + URLCategory + "/" + FicArchiveBuilder.toSafeURL(arrayField[i].toLowerCase()) + "/1.html";
+				linkURL = FicArchiveBuilder.getSitePath() + URLCategory + "/" + 
+				FicArchiveBuilder.toSafeURL(arrayField[i].toLowerCase()) + 
+				FicArchiveBuilder.getPaginationDivider() + "1.html";
 			}
 			if (i < arrayField.length - 1) {
 				field.append(buildField(FicArchiveBuilder.getTagTemplate(), arrayField[i], linkURL));
@@ -618,6 +713,11 @@ public class Story {
 		return storyTags;
 	}
 	
+	// Sets the tags array
+	public void setStoryTags(String[] newTags) {
+		storyTags = newTags;
+	}
+	
 	// Gets the tagset
 	public HashSet<String> getTagSet() {
 		return storyTagSet;
@@ -628,9 +728,19 @@ public class Story {
 		return storyTitle;
 	}
 	
-	// Gets the fandom.
+	// Sets the story title
+	public void setStoryTitle(String newTitle) {
+		storyTitle = newTitle;
+	}
+	
+	// Gets the fandoms.
 	public String[] getFandoms() {
 		return fandoms;
+	}
+	
+	// Sets the fandoms
+	public void setFandoms (String[] newFandoms) {
+		fandoms = newFandoms;
 	}
 	
 	// Gets the fandom hashset.
@@ -638,12 +748,17 @@ public class Story {
 		return fandomHashSet;
 	}
 	
-	// Gets the author.
+	// Gets the authors.
 	public String[] getAuthors() {
 		return authors;
 	}
 	
-	// Gets the author.
+	// Sets the author.
+	public void setAuthors(String[] newAuthors) {
+		authors = newAuthors;
+	}
+	
+	// Gets the author hashset.
 	public HashSet<String> getAuthorHashSet() {
 		return authorHashSet;
 	}
