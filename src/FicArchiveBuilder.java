@@ -50,6 +50,9 @@ public class FicArchiveBuilder {
 	// regardless of what else it starts with
 	private static String[] acceptedOpeningHTMLTags = new String[] {"<br", "<hr", "<h", "</", "<di", "<im", "<li", "<ul", "<ol",
 	"<if", "<bl", "<ta", "<tr", "<td", "<th", "<no"};
+	// To reduce magic numbers
+	private static final int LONGEST_OPENING_TAG_LENGTH = 3;
+	private static final int SHORTEST_OPENING_TAG_LENGTH = 2;
 	
 	
 	// The standard sets of fields for each template
@@ -172,10 +175,9 @@ public class FicArchiveBuilder {
 	***/
 	// match {{ or }} only
 	private static Pattern templateDelimiters = Pattern.compile("\\{\\{|\\}\\}");
-	// The BEL character (char = 7), being an old teletype-related character,
-	// should not ever appear in any actual file or text, so it makes a good 
-	// delimiter for scanning the whole file in as few loops as possible.
-	private static Pattern fastScanningPattern = Pattern.compile(Character.toString((char)7));
+	// Use the 0 (end) character as a delimiter for scanning a whole file in as
+	// few loops as possible.
+	private static Pattern fastScanningPattern = Pattern.compile(Character.toString((char)0));
 	
 	/***
 	Used to provide formatting for dates such as date updated/date published.
@@ -467,18 +469,42 @@ public class FicArchiveBuilder {
 					// Create initial story array and output folder
 					stories = new Story[storyFolders.length];
 					File storiesOutputFolder = new File(output, "stories");
-					// Build story objects for each folder, create their output files
-					// And add them to relevant tagset/author/fandom/etc hashmaps
-					for (int i = 0; i < stories.length; i++) {
+					/***
+					for (int i = 0; i < stories.length; i++) {						
 						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
+						stories[i].buildInfoboxes();
 						System.out.println("Building story " + stories[i].getStoryTitle() + "...");
 						stories[i].buildStory();
 						addToStoryMap(archiveTagMap, stories[i].getStoryTags(), stories[i]);
 						addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
 						addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
-					}		
+					}
+					***/
+					System.out.println("Building stories...");
+					for (int i = 0; i < stories.length; i++) {						
+						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
+					}
+					for (int i = 0; i < stories.length; i++) {
+						stories[i].buildInfoboxes();
+					}
+					for (int i = 0; i < stories.length; i++) {
+						if (!brief) {
+							System.out.println("Building story " + stories[i].getStoryTitle() + "...");
+						}
+						stories[i].buildStory();
+					}
+					System.out.println("Building tagsets...");
+					for (int i = 0; i < stories.length; i++) {
+						addToStoryMap(archiveTagMap, stories[i].getStoryTags(), stories[i]);
+					}
+					for (int i = 0; i < stories.length; i++) {
+						addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
+					}
+					for (int i = 0; i < stories.length; i++) {
+						addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
+					}
 					// Build indexes of works by various orderings
-					String currentIndex;										
+					String currentIndex;								
 					// Create index by title
 					if (!skipTitleIndex) {
 						File allByTitleFolder = new File(output, "by_title");
@@ -761,7 +787,7 @@ public class FicArchiveBuilder {
 		// Print a warning if there are no arguments given
 		if (args.length == 0) {
 			building = false;
-			System.out.println("You must supply at least one argument. Try 'FicArchiveBuilder --man' if you need the manual.");
+			System.out.println("You must supply at least one argument. Try Try '--man' or '--help' if you need the manual.");
 		}
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-i") || args[i].equals("-input")) {
@@ -1348,9 +1374,9 @@ public class FicArchiveBuilder {
 		if (s.equals("") || nonParagraphHTMLTags.contains(s)) { // treat a blank line as not requiring html
 			return true;
 		}
-		// Strip whitespace, and get a substring of only the first maxTagLength+1 characters
-		String comparisonSubstring = s.replaceAll("\\s", ""); 
-		int maxTagLength = 3; // our longest test string is 3 chars long
+		// Strip leading whitespace, and get a substring of only the first maxTagLength+1 characters
+		String comparisonSubstring = s.trim();/*.replaceAll("\\s", ""); */
+		int maxTagLength = LONGEST_OPENING_TAG_LENGTH; // our longest test string is 3 chars long
 		if (comparisonSubstring.length() > maxTagLength) { // only get the substring if it's longer than maxTagLength
 			comparisonSubstring = comparisonSubstring.substring(0, maxTagLength);
 			//System.out.print(comparisonSubstring + "\t");
@@ -1358,7 +1384,7 @@ public class FicArchiveBuilder {
 		// Check progressively shorter versions of the string against the set
 		// of non-paragraph HTML tags
 		int j = comparisonSubstring.length(); // in case the string was shorter than maxTagLength
-		for (int i = j; i > 0; i--) {
+		for (int i = j; i > SHORTEST_OPENING_TAG_LENGTH; i--) {
 			if (nonParagraphHTMLTags.contains(comparisonSubstring)) {
 				return true;
 			}
@@ -1443,7 +1469,7 @@ public class FicArchiveBuilder {
 	
 	// Converts potentially unsafe input strings (like story tags) into strings
 	// that are safe for URLs. Unsafe characters are replaced with "_##" where
-	// "##" is the int value of the character.
+	// "##" is the numerical value of the character.
 	public static String toSafeURL(String s) {
 		StringBuilder url = new StringBuilder();
 		int c = 0;

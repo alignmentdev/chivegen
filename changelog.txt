@@ -1,5 +1,14 @@
 CHANGELOG
 
+2023 December 17
+	- Created branches for ao3 converter and some caching-relating refactoring
+	  (experimental).
+	- Replaced the replaceAll() in the casual HTML conversion with trim() for
+	  checking the starting substring of a paragraph. 
+	- Added constants for longest and shortest opening HTML tag substrings in
+	  the hashset, and reduced the number of loops we should be doing per line
+	  to check if the start of a paragraph matches them.
+
 2023 August 1
 	- Fixed pagination generation bugs that caused incorrect page numbers,
 	  duplicate pagination, and was mangling certain preset URLs.

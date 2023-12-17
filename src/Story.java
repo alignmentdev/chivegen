@@ -304,11 +304,6 @@ public class Story {
 		if (wordcount == -1) {
 			wordcount = countWords();
 		}
-		// Generate the story infobox.
-		if (chapters.length > 0) {
-			storyInfo = buildStoryInfoBox();
-			indexStoryInfo = buildIndexStoryInfoBox();
-		}	
 	}
 	
 	// Parses fandom data
@@ -503,6 +498,14 @@ public class Story {
 		// CREATE TABLE OF CONTENTS PAGE
 		FicArchiveBuilder.buildPage(FicArchiveBuilder.buildStandardPageString(toc.toString(), 
 		FicArchiveBuilder.buildPageTitle("Table of Contents", storyTitle)), new File(storyOutputFolder, "toc.html"));
+	}
+	
+	// Build the story infoboxes
+	public void buildInfoboxes() {
+		if (chapters.length > 0) {
+			storyInfo = buildStoryInfoBox();
+			indexStoryInfo = buildIndexStoryInfoBox();
+		}	
 	}
 	
 	// Builds a string containing the content of the chapter, notes, infobox, etc.
@@ -771,6 +774,11 @@ public class Story {
 	// Gets the wordcount.
 	public int getWordCount() {
 		return wordcount;
+	}
+	
+	// Gets chapter count
+	public int getChapterCount() {
+		return chapters.length;
 	}
 	
 	// Gets the rating enum
