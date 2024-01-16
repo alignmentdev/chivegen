@@ -1,8 +1,13 @@
 CHANGELOG
 
+2024 January 15
+	- Slightly altered HTML detector to only check strings actually starting
+	  with "<".
+	- Added a second timer track time to create stories separately from total.
+
 2023 December 17
 	- Created branches for ao3 converter and some caching-relating refactoring
-	  (experimental).
+	 (experimental).
 	- Replaced the replaceAll() in the casual HTML conversion with trim() for
 	  checking the starting substring of a paragraph. 
 	- Added constants for longest and shortest opening HTML tag substrings in

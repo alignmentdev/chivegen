@@ -593,7 +593,6 @@ public class Story {
 		if (FicArchiveBuilder.isVerbose()) {
 			System.out.println("Creating array of chapter content...");
 		}
-		String chapterPagination = getChapterPagination(chapterNumber);
 		// Don't bother showing chapter title for a single-chapter work
 		String chapterTitle = "";
 		if (FicArchiveBuilder.showChapterNumbers() && chapters.length > 1) {
@@ -605,7 +604,7 @@ public class Story {
 		// Story infobox, chapter title, story notes, chapter file input, end notes, pagination
 		return new String[] {getStoryInfo(), chapterTitle, getFormattedStoryNotes(chapterNumber), "",
 		FicArchiveBuilder.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), "",
-		getFormattedEndNotes(chapterNumber), chapterPagination};
+		getFormattedEndNotes(chapterNumber), getChapterPagination(chapterNumber)};
 	}
 	
 	// Gets story notes, but only for the first chapter

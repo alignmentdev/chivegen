@@ -255,6 +255,8 @@ public class FicArchiveBuilder {
 	private static boolean archiveHasTags = false; // true only if at least one story has tags
 
 	public static void main(String[] args) {
+		long storyStartTime = 0;
+		long storyEndTime = 0;
 		long startTime = System.currentTimeMillis(); // Track time it takes for the program to run
 		// Parse just the initial folder arguments
 		parseFolderArgs(args);
@@ -469,7 +471,11 @@ public class FicArchiveBuilder {
 					// Create initial story array and output folder
 					stories = new Story[storyFolders.length];
 					File storiesOutputFolder = new File(output, "stories");
-					/***
+					storyStartTime = System.currentTimeMillis();
+					// Testing out two ways of generating stories.
+					// So far there doesn't seem to a signficant difference in the time
+					// taken by one method versus another?
+					
 					for (int i = 0; i < stories.length; i++) {						
 						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
 						stories[i].buildInfoboxes();
@@ -479,7 +485,7 @@ public class FicArchiveBuilder {
 						addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
 						addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
 					}
-					***/
+					/***
 					System.out.println("Building stories...");
 					for (int i = 0; i < stories.length; i++) {						
 						stories[i] = new Story(storyFolders[i], storiesOutputFolder);
@@ -502,7 +508,9 @@ public class FicArchiveBuilder {
 					}
 					for (int i = 0; i < stories.length; i++) {
 						addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
-					}
+					}		
+					***/		
+					storyEndTime = System.currentTimeMillis();
 					// Build indexes of works by various orderings
 					String currentIndex;								
 					// Create index by title
@@ -632,6 +640,7 @@ public class FicArchiveBuilder {
 		long finalTime = System.currentTimeMillis() - startTime;
 		if (building && readyToBuild) {
 			System.out.println("Time taken: " + (double)finalTime / (double)1000 + " seconds.");
+			System.out.println("Time for story generation: " + (double)(storyEndTime - storyStartTime) / (double)1000 + " seconds.");
 		}
 	}
 	
