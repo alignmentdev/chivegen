@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# This is just a simple shell script to run FicArchiveBuilder (chivegen)
+# with the given set of arguments.
+
+if [ $# -lt 4 ]; then
+	# If we don't have enough arguments to run, just give usage and quit.
+	echo "USAGE: chivegen -i INPUT_DIR -o OUTPUT_DIR [additional options]"
+else
+	# Go through our arguments and put convert input and output directories to
+	# absolute paths.
+	declare -a FABargs
+	out_next=0
+	in_next=0
+	input_dir=""
+	output_dir=""
+	for i in "$@"; do
+		# echo "CURRENT ARG: $i"
+		if [ $out_next -eq 1 ]; then
+			output_dir="$(realpath "$i")"
+			out_next=0
+		elif [ $in_next -eq 1 ]; then
+			input_dir="$(realpath "$i")"
+			in_next=0
+		else		
+			if [[ $i == "-i" ]]; then
+				in_next=1
+			elif [[ $i == "-o" ]]; then
+				out_next=1
+			else
+				FABargs+=($i)
+			fi;
+		fi;
+	done
+	# Go into the binaries folder, run FicArchiveBuilder with java, then go
+	# back up to the main folder.
+	cd "./bin"
+	# echo "FINAL ARGS: ${FABargs[@]} (${#FABargs[@]} args)"
+	echo "Running FicArchiveBuilder..."
+	# echo "java FicArchiveBuilder" "-i \"$input_dir\" -o \"$output_dir\" ${FABargs[@]}"
+	# Note that all our arguments must be in separate quotes, or else they will
+	# be treated like one giant lump string.
+	java "FicArchiveBuilder" "-i" "$input_dir" "-o" "$output_dir" "${FABargs[@]}"
+	cd ".."
+fi;
