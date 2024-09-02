@@ -56,7 +56,7 @@ public class FileToStringUtils {
     }  
     // If using casual HTML, just run it through the converter
     if (useCasualHTML) {
-      return HtmlUtils.convertToHTML(fileContents.toString());
+      return HtmlUtils.convertToHtml(fileContents.toString());
     }
     return fileContents.toString();
   }

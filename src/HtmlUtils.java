@@ -31,109 +31,87 @@ public class HtmlUtils {
 
   // Wraps each line of a string in HTML paragraph tags, unless it appears to
   // be a non-paragraph entity such as an empty line, a div tag, a line break,
-  // or horizonal line.
-  public static String convertToHTML(String text) {
+  // or horizonal line. In case of natural in-text line breaks, insert <br>.
+  public static String convertToHtml(String text) {
+    //System.out.println("CONVERSION: ");
     if (text.equals("")) { // if it's blank, don't even bother
       return text;
     }
-    StringBuilder formattedOutput = new StringBuilder();
-    Scanner currentReader = new Scanner(text);
-    Scanner nextLineReader = new Scanner(text);
-    String current = "";
-    String current2 = "";
-    String next = "";
-    int currentPosition = 0;
-    int nextPosition = 0;
-    boolean isParagraph;
-    while (nextLineReader.hasNextLine()) {
-      isParagraph = false;
-      // Get the next line
-      next = nextLineReader.nextLine(); 
-      nextPosition++;
-      // Skip nextLineReader ahead to the next paragraph break/empty line
-      // if possible
-      while (nextLineReader.hasNextLine() 
-           && !next.trim().equals("")) {
-        next = nextLineReader.nextLine(); 
-        nextPosition++;
-      }
-      // Now we look through the lines between current's starting point 
-      // and next.
-      // currentReader reads the first line of the current paragraph;
-      // moves a line forward
-      if (currentReader.hasNextLine()) {
-        current = currentReader.nextLine();
-        currentPosition++;
-      }
-      // Check for any opening tags that would suggest we aren't in a
-      // paragraph
-      isParagraph = !detectNonParagraphHTMLTags(current);
-      // If the current line starts with <p>, don't add it.
-      if (isParagraph && !current.trim().startsWith("<p")) {
-        formattedOutput.append("<p>");
-      }
-      formattedOutput.append(current);
-      // If we have more lines than the first, keep reading and adding 
-      // <br> until nextPos is reached.
-      while (currentPosition < nextPosition) {
-        // keep track of the last line in case it ends with a </p> tag
-        if (currentPosition == nextPosition - 1) {
-          current2 = current;
-        }
-        // Get the next line
-        current = currentReader.nextLine();
-        currentPosition++;
-        
-        // If this is clearly not a paragraph, or was preceded by something
-        // with existing HTML formatting, just append it without any further
-        // formatting
-        if (detectNonParagraphHTMLTags(current.trim())
-            || detectNonParagraphHTMLTags(current2)) {
-          formattedOutput.append("\n" + current);
+    StringBuilder formatted = new StringBuilder();
+    Scanner lineReader = new Scanner(text);
+    String current;
+    String currentClean;
+    boolean inParagraph = false;
+    while (lineReader.hasNextLine()) {
+      current = lineReader.nextLine();
+      currentClean = current.trim();
+      // If this is clearly not part of a paragraph, just append as-is
+      if (detectNonParagraphHtmlTags(currentClean)) {
+        //System.out.println("Non-paragraph content: " + current);
+        formatted.append("\n" + current);
+      } else if (inParagraph) {
+        //System.out.println("Paragraph content: " + current);
+        // If we're already in a paragraph, break lines with <br> unless we
+        // reach an entirely blank line, in which case the paragraph ends.
+        if (currentClean.equals("")) {
+          formatted.append("</p>");
+          inParagraph = false;
+        } else if (paragraphEnds(currentClean)) {
+          inParagraph = false;
         } else {
-          formattedOutput.append("\n<br>" + current);
+          formatted.append("\n<br>" + current);
         }
-      }
-      if (isParagraph) {
-        // if the 2nd most recent line of currentReader doesn't end in
-        // </p>, add it.
-        if (nextLineReader.hasNextLine() && !current2.endsWith("/p>")) {
-          formattedOutput.append("</p>\n");
+      } else if (!currentClean.equals("")) {
+        // If we have content on this line, we are entering a new paragraph.
+        //System.out.println("Paragraph ENTERED, line 1: " + current);
+        formatted.append("\n<p>" + current);
+        // If this paragraph doesn't end itself with a </p> tag, mark that we
+        // are scanning inside a paragraph right now
+        if (!paragraphEnds(currentClean)) {
+          inParagraph = true;
         }
-        // Otherwise, if we're at the end of the string, check the last
-        // line
-        if (!nextLineReader.hasNextLine() && !current.endsWith("/p>")) {
-          formattedOutput.append("</p>");
-        }
+      } else {
+        // Blank line.
+        //System.out.println("Blank line. Adding <br>");
+        formatted.append("\n<br>\n");
       }
     }
-    return formattedOutput.toString();
+    //System.out.println("RESULTS: ");
+    //System.out.println(formatted.toString());
+    lineReader.close();
+    return formatted.toString();
   }
   
-  // Returns true if a string starts with HTML formatting that would make it
-  // not need paragraph tags
-  public static boolean detectNonParagraphHTMLTags(String s) {
-    if (s.equals("") || nonParagraphHTMLTags.contains(s)) { 
-      // treat a blank line as not requiring html
-      return true;
+  // Returns whether or not the given string ends with "</p>".
+  private static boolean paragraphEnds(String s) {
+    return s.length() > 3 && s.substring(s.length() - 4).equals("</p>");
+  }
+  
+  // Returns true if the string starts with a recognized non-paragraph HTML
+  // opening tag.
+  private static boolean detectNonParagraphHtmlTags(String s) {
+    if (s.equals("")) {
+      return false;
     }
     // Strip leading whitespace, and get a substring of only the first
     // maxTagLength+1 characters
-    String comparisonSubstring = s.trim();/*.replaceAll("\\s", ""); */
-    if (comparisonSubstring.charAt(0) == '<') { 
+    String comparisonSubstring = s.trim();
+    if (comparisonSubstring.charAt(0) == '<') {
       // Only check for HTML tags if we clearly start with one
       if (comparisonSubstring.length() > LONGEST_OPENING_TAG_LENGTH) { 
         // only get the substring if it's longer than our max tag length
         comparisonSubstring = comparisonSubstring.substring(0, LONGEST_OPENING_TAG_LENGTH);
       }
+      //System.out.println("Is this a tag we know?: " + comparisonSubstring);
       // Check progressively shorter versions of the string against the set
       // of non-paragraph HTML tags
       int j = comparisonSubstring.length();
-      for (int i = j; i > SHORTEST_OPENING_TAG_LENGTH; i--) {
+      for (int i = j; i >= SHORTEST_OPENING_TAG_LENGTH; i--) {
+        comparisonSubstring = comparisonSubstring.substring(0, i);
+        //System.out.println("Is this a tag we know?: " + comparisonSubstring);
         if (nonParagraphHTMLTags.contains(comparisonSubstring)) {
           return true;
         }
-        comparisonSubstring = comparisonSubstring.substring(0, i);
       }
     }
     return false;
