@@ -581,7 +581,7 @@ public class Story {
       return new String[] {titleLink, buildField(FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
       buildField(FicArchiveBuilder.getWordcountLabel(), HtmlUtils.numberWithCommas(wordcount)), 
       buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
-      buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)), 
+      buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)),
       buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
       buildField(FicArchiveBuilder.getSummaryContentTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
       buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 

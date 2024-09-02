@@ -12,13 +12,13 @@ public class ContentTemplate {
   // Strings that make up the template
   private String[] templateStrings;
   // Order in which content should be inserted. 
-  // TODO: rename this to contentIndices or something more appropriate
+  // TODO: eventually rename to contentIndices or something more appropriate
   private int[] insertionPoints;
   
   // For template scanning - matches {{ or }} only
   private static Pattern templateDelimiters = Pattern.compile("\\{\\{|\\}\\}");
   
-  // Old constructor  
+  // Old constructor. Deprecated. TODO check for use and replace.
   public ContentTemplate(ArrayList<String> strings, ArrayList<Integer> inserts) {
     templateStrings = strings.toArray(new String[0]);
     insertionPoints = new int[inserts.size()];
@@ -29,9 +29,33 @@ public class ContentTemplate {
     }
   }
   
-  // Constructor. Accepts a string and array of keyword strings, and parses and
-  // constructs a template object using them.
+  // Constructor. Reads a template string from the input file if possible, and
+  // constructs the template from the string and keywords. If the file is not
+  // valid (i.e. doesn't exist), uses the fallback string as the template
+  // string instead.
+  public ContentTemplate(File file, String[] keywords, String fallback) {
+    // If the file exists and can be read, read it in and use it for our
+    // template. Otherwise, use the fallback string.
+    if (file.exists()) {
+    //  if (FicArchiveBuilder.isVerbose()) {  // TODO replace verbosity check
+        System.out.println("'" + file.getName() + "' found in input directory."
+                           + " Reading to string...");
+    //  }
+      this.parseTemplateString(FileToStringUtils.readFileToString(file), keywords);
+    } else {
+      this.parseTemplateString(fallback, keywords);
+    }
+  }
+
+  // Alternate constructor. Accepts a string and array of keyword strings, and
+  // parses and sets up the internal contents of the template object with them.
   public ContentTemplate(String templateInput, String[] keywords) {
+    this.parseTemplateString(templateInput, keywords);
+  }
+  
+  // Accepts a string and array of keyword strings, and parses and
+  // sets up the internal contents of the template object using them.
+  private void parseTemplateString(String templateInput, String[] keywords) {
     // For quicker string -> index lookup
     HashMap<String, Integer> keywordMap = GenUtils.hashMapStringToIndex(keywords);
     // For the ContentTemplate constructor
@@ -129,12 +153,14 @@ public class ContentTemplate {
     }
     // Interleave the template strings and content to insert
     for (int i = 0; i < this.templateStrings.length; i++) {
+      /**
       if (FicArchiveBuilder.isVerbose()) {  // TODO: ->ChiveGenMain when ready
         System.out.println("Template line: " + this.templateStrings[i]);
         if (i < this.insertionPoints.length) {
           System.out.println("Input line index: " + this.insertionPoints[i]);
         }
       }
+      **/
       content.append(this.templateStrings[i]);
       // If i is in range, and the value isn't -1 (not found)
       // insert the input string
