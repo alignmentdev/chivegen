@@ -1,4 +1,5 @@
-HOW TO USE CHIVEGEN (v0.2.8)
+HOW TO USE CHIVEGEN (v0.2.12)
+A work in progress.
   
 INPUT DIRECTORY
 At bare minimum, you will need one input directory, with the following:
@@ -48,7 +49,7 @@ Fandom: 							{{Fandom}}
 Author: / Creator: 						{{Author}}
 Published: / Date Published: / Posted: / Date Posted: 		{{Published}}
 Updated: / Date Updated:					{{Updated}}
-	Note that dates must be formatted in ISO formated, i.e. YYYY-MM-DD, to be recognized.
+	Note that dates must be in ISO format, i.e. YYYY-MM-DD, to be recognized.
 Tags: / Characters: 						{{Tags}}
 Words: / Length: 						{{Wordcount}}
 Complete:							{{IsComplete}}
@@ -73,16 +74,20 @@ DEFAULT PAGES
 "/fandoms/"		Folders for each fandom in the archive, with paginated indexes of all stories in those fandoms.
 "/authors/"		Folders for each author in the archive, with paginated indexes of all stories by those authors.
 "/tags"/		Folders for each tag used in the archive, with paginated indexes of all stories with that tag.
-"/stories/"		Folders for each individual story, with chapters and table of contents.
-		
+"/stories/"		Folders for each individual story. Each contains the story's chapters and (if there is more than one chapter) a table of contents.
+
 
 INPUT FILENAMES FOR CUSTOM TEMPLATES
 "template.html"		Page template. Required.
 "infobox.txt"		Story infobox template.
+"infobox_index.txt"	Story infobox template variant for works listed on index.
 "fields.txt"		Basic infobox field template.
 "summaries.txt"		Summary/notes field template.
 "chapter.txt"		Chapter page template.
-"stories_by.txt"	Story index template.
+"chapterpagination.txt"	Chapter pagination template.
+"chaptertitles.txt"	Chapter title template.
+"pagination.txt"	General pagination template.
+"stories_by.txt"	Story index template (i.e. for "by title", "by author", etc.)
 
 OTHER INPUT
 "labels.txt"		Custom field labels. (See: TO SET ALTERNATIVE FIELD LABELS)
@@ -93,6 +98,21 @@ OTHER INPUT
 CASUAL HTML AND HOW TO USE IT
 
 Casual HTML basically fills in line break and paragraph tags for you, but leaves any existing HTML alone.
+
+So for example, this:
+
+	Lorem ipsum dolor sit amet. Adipiscing <i>elit</i>, lorem ipsum?
+
+	Lorem ipsum
+	Dolor sit amet
+
+Becomes:
+
+	<p>Lorem ipsum dolor sit amet. Adipiscing <i>elit</i>, lorem ipsum?</p>
+
+	<p>Lorem ipsum<br>
+	Dolor sit amet</p>
+
 It also detects lines that begin either with paragraph tags, or with certain non-paragraph tags such as <div> and <img>, and does not put unnecessary paragraph tags around them.
 
 The full list of starting strings that will prevent automatic formatting is: "<br", "<hr", "<h", "</", "<di", "<im", "<if", "<bl", "<li", "<ol", "<ul", "<ta", "<tr", "<td", "<th", and "<no". The last entry, "<no>", is meant to serve as a catchall for "don't format this".
@@ -100,10 +120,10 @@ The full list of starting strings that will prevent automatic formatting is: "<b
 
 TEMPLATING FIELDS FOR CUSTOM TEMPLATES
 
-These fields are the fields ChiveGen tries to write to each template. You can include as many as you like, but only fields for that specific template type will be available.
+These fields are the fields ChiveGen tries to write to each template. You can include as many as you like in your own custom templates, but only fields for that specific template type will be available to insert.
 
 STANDARD PAGE TEMPLATE FIELDS
-File: "template.html"
+Files: "template.html"
 {{Title}}		Page title (as in, the one that appears on the label of the browser tab.)
 {{Main}}		Content inserted into the main body of the page.
 {{Footer}}		An automated footer. Optional. Default content is "[site name] | Powered by ChiveGen [version number]".
@@ -122,7 +142,7 @@ Files: "infobox.txt", "infobox_index.txt"
 {{Rating}}		Story rating. Uses standard field template.
 		
 CHAPTER TEMPLATE FIELDS
-File: "chapter.txt"
+Files: "chapter.txt"
 {{StoryInfo}}		The story infobox
 {{ChapterTitle}}	The chapter title
 {{StoryNotes}}		Author's notes, derived from the notes field in storyinfo.txt
@@ -132,7 +152,7 @@ File: "chapter.txt"
 
 PAGINATION TEMPLATE FIELDS
 Not to be confused with chapter pagination.
-File: "pagination.txt"
+Files: "pagination.txt"
 {{Previous}}		Direct link to previous page
 {{JumpPrev}}		Jump pagination links to previous pages
 {{JumpCurrent}}		Jump pagination for current page (not a link.)
@@ -140,16 +160,16 @@ File: "pagination.txt"
 {{Next}}		Direct link to next page
 
 CHAPTER PAGINATION TEMPLATE FIELDS
-File: "chapterpagination.txt"
+Files: "chapterpagination.txt"
 {{Previous}}		Link to previous page/chapter
 {{Next}}		Link to next page/chapter
 
 STORY INDEX TEMPLATE FIELDS
-File: "stories_by.txt"
+Files: "stories_by.txt"
 {{Navigation}}		Quick links to groupings on the page. Uses the Story Index Navigation template.
 {{ListingTitle}}	Title of whatever the listing is (i.e. "Stories tagged X", "All Authors", etc.)
 {{CurrentlyShowing}}	The "Showing [starting number]-[ending number] of [total]" text, e.g. "Showing 1-10 of 22".
-{{Listings}}		Entries, either in story infoxes, of lists of things like authors/fandoms/etc., plus pagination buttons.
+{{Listings}}		Entries, generally story infoboxes, lists of things like authors/fandoms/etc., plus pagination buttons.
 
 INFOBOX INTERNAL FIELDS (SUMMARY TEMPLATE, FIELD TEMPLATE, BYLINE TEMPLATE, STORY INDEX NAVIGATION, TAGS, ETC.)
 Files: "fields.txt", "summaries.txt", "byline.txt"
@@ -157,7 +177,7 @@ Files: "fields.txt", "summaries.txt", "byline.txt"
 {{C}}			Content
 
 STATS WIDGET TEMPLATE FIELDS
-File: "index.txt"
+Files: "index.txt"
 {{StoryNumber}}		Total number of stories in the archive.
 {{TotalWordcount}}	Total combined wordcount of all stories in the archive.	
 {{FandomNumber}}	Total number of fandoms across all stories in archive.
@@ -213,6 +233,7 @@ Default Story Infobox Template:
 </h2>
 {{Author}}
 {{Fandom}}
+{{Rating}}
 {{Wordcount}}
 {{Chapters}}
 {{Published}}
@@ -220,7 +241,7 @@ Default Story Infobox Template:
 {{Summary}}
 </div>
 
-The index infobox template defaults to the current story infobox template unless an alternative is included in the input files.
+The index infobox template (used to display story info on the index, as opposed to on the fic itself) defaults being the same as to the current story infobox template unless an alternative is included in the input files.
 
 Default Infobox Field Template:
 {{L}}: {{C}}
@@ -231,19 +252,27 @@ Default Summary/Notes Field Template:
 Default Byline Template:
 by {{C}}
 
+Default Tag Template:
+<div class=tag><a href="{{C}}">{{L}}</a></div>
+
+Default Last Tag Template:
+<div class="tag last"><a href="{{C}}">{{L}}</a></div>
+
 Default Chapter Template:
-{{StoryInfo}} 
+{{StoryInfo}}
 <div class="chapter-nav top-nav"><a href="toc.html">Table of Contents</a>
 {{ChapterPagination}}
-</div> 
+</div>
 <h3>
 {{ChapterTitle}}
-</h3> 
+</h3>
 <div class=notes>
 {{StoryNotes}}
 </div>
 {{ChapterBody}}
-<div class="chapter-nav bottom-nav">
+<div class=notes>
+{{EndNotes}}
+</div><div class="chapter-nav bottom-nav">
 {{ChapterPagination}}
 </div>
 
@@ -258,6 +287,9 @@ Default Pagination Template
 
 Default Chapter Pagination Template:
 <div class=chapter-pagination>{{Previous}}{{Next}}</div>
+
+Default Chapter Title Template:
+Chapter {{L}}: {{C}}
 
 Default Story Index Template:
 {{Navigation}}

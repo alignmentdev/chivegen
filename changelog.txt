@@ -1,11 +1,20 @@
 CHANGELOG
 
+2024 September 2
+ - Amidst other refactoring preparations, rewrote the HTML parser code entirely
+   after some testing uncovered more issues than realized with preformatted
+   input. The new formatter should now produce more correct output when various
+   tags are involved, and also runs slightly faster. The Gutenberg speedtest
+   input archive went down from ~1600ms to ~1400ms to build, which is promising.
+
 2024 August 29
   - Moved a bunch of utility functions out to new separate classes, and replaced
     references to those functions in FicArchiveBuilder, Story, etc.
   - Switched from 4 space/tab indents to 2 spaces, for readability.
   - Slight tweak/fix to HTML parser to keep it from adding excess <br> tags
     between preformatted paragraphs.
+  - Added a shell script to more quickly recompile binaries from root directory
+    for testing.
 
 2024 August 28
 	- Dusting this project off, and it is in sore need of a refactor. Hopefully
