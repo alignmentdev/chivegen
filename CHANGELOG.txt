@@ -5,8 +5,10 @@ CHANGELOG
     (e.g. verbosity) to a new class, ChiveGenMain, which can instead pass
     FicArchiveBuilder its archive-specific arguments and invoke its functions
     from there. Updated the build.sh and chivegen scripts to reflect this.
-  - The chivegen shell script now attempts to create appropriate parent
-    directories for output folders whose parents do not exist.
+  - Improved the chivegen shell script. It now attempts to create appropriate 
+    parent directories for output folders whose parents do not exist, handles
+    template file arguments, and checks properly for the presence of input and
+    output arguments.
   - Beginning a semi-experimental verbosity overhaul. To avoid having to change
     a bunch of code just yet, FicArchiveBuilder still handles verbosity in most
     cases with the existing system, though it now recieves its verbosity

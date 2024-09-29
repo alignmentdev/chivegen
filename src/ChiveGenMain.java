@@ -139,7 +139,7 @@ public class ChiveGenMain {
     // Loop through the arguments and parse the folder-related ones, storing the
     // others in our ArrayList opt for later use.
     for (int i = 0; i < args.length; i++) {
-      if (args[i].equals("-i") || args[i].equals("-input")) {
+      if (args[i].equals("-i") || args[i].equals("--input")) {
         if (i == args.length - 1) {
           // If this is the last argument, report an error and return false
           printMissingArgError(args[i], "input directory");
@@ -149,7 +149,7 @@ public class ChiveGenMain {
           inputPath = args[i+1];
           i++;
         }
-      } else if (args[i].equals("-o") || args[i].equals("-output")) {
+      } else if (args[i].equals("-o") || args[i].equals("--output")) {
         if (i == args.length - 1) {
           // Again, if this is last, it's an error
           printMissingArgError(args[i], "output directory");
@@ -159,7 +159,7 @@ public class ChiveGenMain {
           outputPath = args[i+1];
           i++;
         }
-      } else if (args[i].equals("-t") || args[i].equals("-template")) {
+      } else if (args[i].equals("-t") || args[i].equals("--template")) {
         if (i == args.length - 1) {
           printMissingArgError(args[i], "template file");
           return false;
@@ -279,21 +279,21 @@ public class ChiveGenMain {
     System.out.println("chivegen -i INPUT_DIR -o OUTPUT_DIR"
                + " [... OTHER OPTIONS ...]");
     System.out.println("\nREQUIRED PARAMETERS");
-    System.out.println("-i, -input\t\tSpecify input folder.");
-    System.out.println("-o, -output\t\tSpecify output folder.");
+    System.out.println("-i, --input\t\tSpecify input folder.");
+    System.out.println("-o, --output\t\tSpecify output folder.");
     System.out.println("\nGENERAL ARCHIVE FORMATTING OPTIONS");
-    System.out.println("-s, -site-name\t\tSpecify website name for use in "
+    System.out.println("-s, --site-name\t\tSpecify website name for use in "
                + "page titles, etc.\n\t\t\tDefault is \""
                + siteName + "\".");
-    System.out.println("-url, -site-path\tSpecify a site folder path for "
+    System.out.println("-url, --site-path\tSpecify a site folder path for "
                + "links, i.e. \"/name/\".\n\t\t\tDefaults to "
                + "\"/\".");
     System.out.println("-c, --casual-html\tEnable casual HTML for story "
                + "input. (May be slow.)");
-    System.out.println("-tf, -title\t\tGive a title template for page "
+    System.out.println("-tf, --title\t\tGive a title template for page "
                + "titles. \n\t\t\tDefault is \"" + titleTemplate
                + "\".");
-    System.out.println("-ff, -footer\t\tGive a footer template for "
+    System.out.println("-ff, --footer\t\tGive a footer template for "
                + "automatic footers. \n\t\t\tDefault is \""
                + footerTemplate + "\".");
     System.out.println("\nSTORY INFOBOX OPTIONS");

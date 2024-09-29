@@ -894,7 +894,7 @@ public class FicArchiveBuilder {
     ***/
     // Go through the arguments in order and read them
     for (int i = 0; i < args.length; i++) {
-      if (args[i].equals("-s") || args[i].equals("-site-name")) {
+      if (args[i].equals("-s") || args[i].equals("--site-name")) {
         if (i == args.length - 1) {
           printArgsError(args[i], "site name");
         }
@@ -903,7 +903,7 @@ public class FicArchiveBuilder {
           i++;
         }
       }
-      else if (args[i].equals("-tf") || args[i].equals("-title")) {
+      else if (args[i].equals("-tf") || args[i].equals("--title")) {
         if (i == args.length - 1) {
           printArgsError(args[i], "title");
         }
@@ -912,7 +912,7 @@ public class FicArchiveBuilder {
           i++;
         }
       }
-      else if (args[i].equals("-ff") || args[i].equals("-footer")) {
+      else if (args[i].equals("-ff") || args[i].equals("--footer")) {
         if (i == args.length - 1) {
           printArgsError(args[i], "footer");
         }
@@ -921,7 +921,7 @@ public class FicArchiveBuilder {
           i++;
         }
       }
-      else if (args[i].equals("-url") || args[i].equals("-site-path")) {
+      else if (args[i].equals("-url") || args[i].equals("--site-path")) {
         if (i == args.length - 1) {
           printArgsError(args[i], "site path");
         }
@@ -930,7 +930,7 @@ public class FicArchiveBuilder {
           i++;
         }
       }
-      else if (args[i].equals("-mpp") || args[i].equals("-per-page")) {
+      else if (args[i].equals("-mpp") || args[i].equals("--per-page")) {
         if (i == args.length - 1) {
           printArgsError(args[i], "number");
         }
@@ -991,8 +991,7 @@ public class FicArchiveBuilder {
       else if (args[i].equals("-by") || args[i].equals("--use-byline")) {
         useByLine = true;
       }
-      else if (args[i].equals("-sef") ||
-                 args[i].equals("--skip-empty-fields")) {
+      else if (args[i].equals("--skip-empty-fields")) {
         skipEmptyFields = true;
       }
       else if (args[i].equals("--skip-jump")) {
