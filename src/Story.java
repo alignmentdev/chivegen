@@ -583,15 +583,20 @@ public class Story {
       buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
       buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)),
       buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
-      buildField(FicArchiveBuilder.getSummaryContentTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
+      buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
       buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
       buildField(FicArchiveBuilder.getByLineTemplate(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
       buildField(FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
       buildField(FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
     }
-    return new String[] {titleLink, getSkippableFandom(), Integer.toString(wordcount), Integer.toString(chapters.length),
-    getDateString(published, hasDatePublished), getDateString(updated, hasDateUpdated), summary, getSkippableCompletionStatus(), getSkippableAuthor(), getFormattedTags(), 
-    FicArchiveBuilder.getRatingString(storyRating)};
+    return new String[] {titleLink, getSkippableFandom(), 
+                         Integer.toString(wordcount), 
+                         Integer.toString(chapters.length),
+                         getDateString(published, hasDatePublished), 
+                         getDateString(updated, hasDateUpdated), summary, 
+                         getSkippableCompletionStatus(), getSkippableAuthor(), 
+                         getFormattedTags(), 
+                         FicArchiveBuilder.getRatingString(storyRating)};
   }
   
   // Creates content arrays for chapter pages
@@ -617,7 +622,10 @@ public class Story {
   // Gets story notes, but only for the first chapter
   public String getFormattedStoryNotes(int n) {
     if (n == 0) {
-      return buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getNotesLabel(), storyNotes);
+      //return FicArchiveBuilder.getSummaryContentTemplate().assemble(new String[]
+      //  {FicArchiveBuilder.getNotesLabel(), storyNotes});
+      return buildField(FicArchiveBuilder.getSummaryTemplate(),
+                        FicArchiveBuilder.getNotesLabel(), storyNotes);
     }
     return "";
   }
@@ -625,14 +633,17 @@ public class Story {
   // Gets story end notes, but only for the last chapter
   public String getFormattedEndNotes(int n) {
     if (n == chapters.length - 1) {
-      return buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getEndNotesLabel(), storyEndNotes);
+      //return FicArchiveBuilder.getSummaryContentTemplate().assemble(new String[]
+      //  {FicArchiveBuilder.getEndNotesLabel(), storyEndNotes});
+      return buildField(FicArchiveBuilder.getSummaryTemplate(), 
+                        FicArchiveBuilder.getEndNotesLabel(), storyEndNotes);
     }
     return "";
   }
   
   // Get the formatted chapter title
   public String getFormattedChapterTitle(int chapterNumber) {
-    return FicArchiveBuilder.getChapterTitleTemplate().replace("{{C}}", 
+    return FicArchiveBuilder.getChapterTitleTemplate().replace("{{C}}",
     chapterTitles[chapterNumber]).replace("{{L}}", Integer.toString(chapterNumber + 1));
   }  
   
@@ -659,7 +670,7 @@ public class Story {
   // Use replace() to quickly insert data into certain short templated fields
   // This uses the replace() method, because it's currently simpler for a short
   // template
-  // This might be replaced with a normal hashmap templating method, but
+  // This might be replaced with a normal templating method, but
   // for now the time difference is negligible.
   public String buildField(String field, String label, String content) {
     if (!content.equals("")) {

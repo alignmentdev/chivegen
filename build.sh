@@ -5,6 +5,6 @@ echo "Removing old binaries..."
 rm -f *.class
 cd ../src
 echo "Compiling..."
-javac FicArchiveBuilder.java -d ../bin
+javac ChiveGenMain.java -d ../bin
 cd ..
 echo "Done."

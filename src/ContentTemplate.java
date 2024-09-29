@@ -176,6 +176,15 @@ public class ContentTemplate {
     return templateStrings;
   }
   
+  // Get the template strings all in one string
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < templateStrings.length; ++i) {
+      builder.append(templateStrings[i]);
+    }
+    return builder.toString();
+  }
+  
   // Get the array of indexes of content to be inserted.
   public int[] getInsertionPoints() {
     return insertionPoints;

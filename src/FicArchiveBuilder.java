@@ -15,11 +15,11 @@ import java.lang.Math;
 
 public class FicArchiveBuilder {
   // Version string for manual and about text
+  // (DEPRECATED - This has been/will be moved to the new main class)
   private static String versionString = "v0.2.12";
 
-
-  /***
-  For input and output folders.
+  /*** 
+    For input and output folders.
   ***/
   // Files for input folder, template and output folder
   private static File templateFile;
@@ -33,42 +33,57 @@ public class FicArchiveBuilder {
   // Scanner for template
   private static Scanner templateReader;
   
-  // Array of all stories in archive
-  private static Story[] stories;
+  /***
+    Array of all stories in archive
+  ***/
+  private static Story[] stories; 
   
-  // StoryBuilder for various Story-related parsing methods
-  //private static StoryBuilder storyBuilder = new StoryBuilder();
-  
-  // Used for HTML converter formatting  
-  private static HashSet<String> nonParagraphHTMLTags;
-  // In order: line break, horizontal line, heading, end of a tag, div, image, 
-  // list item, unordered list, ordered list, iframe, blockquote, table, 
-  // table row, table data, table heading.
-  // <no></no> can be used to tell ChiveGen to ignore a line for formatting
-  // regardless of what else it starts with
-  private static String[] acceptedOpeningHTMLTags = new String[] {"<br", "<hr", "<h", "</", "<di", "<im", "<li", "<ul", "<ol",
-  "<if", "<bl", "<ta", "<tr", "<td", "<th", "<no"};
-  // To reduce magic numbers
-  private static final int LONGEST_OPENING_TAG_LENGTH = 3;
-  private static final int SHORTEST_OPENING_TAG_LENGTH = 2;
-  
-  
-  // The standard sets of fields for each template
-  private static String[] standardKeywords = new String[] {"Title", "Main", "Footer"};
-  private static String[] storyInfoKeywords = new String[] {"StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
-  "Summary", "IsComplete", "Author", "Tags", "Rating"};
-  private static String[] chapterKeywords = new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "ChapterPagination"};
-  private static String[] paginationKeywords = new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
-  private static String[] chapterPaginationKeywords = new String[] {"Previous", "Next"};
-  private static String[] workIndexKeywords = new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination"};  
-  private static String[] statsWidgetKeywords = new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", "AuthorNumber", "VersionNumber"};  
+  /***
+    The standard sets of fields for each template
+  ***/
+  private static String[] standardKeywords = 
+    new String[] {"Title", "Main", "Footer"};
+    
+  private static String[] storyInfoKeywords = 
+    new String[] {"StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", 
+                  "Updated", "Summary", "IsComplete", "Author", "Tags", 
+                  "Rating"};
+
+  private static String[] chapterKeywords = 
+    new String[] {"StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", 
+                  "ChapterBody", "ChapterEndNotes", "EndNotes", 
+                  "ChapterPagination"};
+
+  private static String[] paginationKeywords = 
+    new String[] {"Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next"};
+
+  private static String[] chapterPaginationKeywords = 
+    new String[] {"Previous", "Next"};
+
+  private static String[] workIndexKeywords = 
+    new String[] {"Navigation", "ListingTitle", "CurrentlyShowing", "Listings", 
+                  "Pagination"};  
+
+  private static String[] statsWidgetKeywords = 
+    new String[] {"StoryNumber", "TotalWordcount", "FandomNumber", 
+                  "AuthorNumber", "VersionNumber"};  
+
   private static String[] fieldKeywords = new String[] {"L", "C"};
   
-  private static String[] allKeywords = new String[] {"Title", "Main", "Footer", "StoryTitle", "Fandom", "Wordcount", "Chapters", "Published", "Updated", 
-  "Summary", "IsComplete", "Author", "Tags", "Rating", "StoryInfo", "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", "ChapterEndNotes", "EndNotes", "ChapterPagination", "Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next", "Navigation", "ListingTitle", "CurrentlyShowing", "Listings", "Pagination", "L", "C"};
+  private static String[] allKeywords = 
+    new String[] {"Title", "Main", "Footer", "StoryTitle", "Fandom", 
+                  "Wordcount", "Chapters", "Published", "Updated", "Summary", 
+                  "IsComplete", "Author", "Tags", "Rating", "StoryInfo", 
+                  "ChapterTitle", "StoryNotes", "ChapterNotes", "ChapterBody", 
+                  "ChapterEndNotes", "EndNotes", "ChapterPagination", 
+                  "Previous", "JumpPrev", "JumpCurrent", "JumpNext", "Next", 
+                  "Navigation", "ListingTitle", "CurrentlyShowing", "Listings", 
+                  "Pagination", "L", "C"};
   
   
-  // The template objects
+  /***
+    The template objects used to build pages, fields, etc
+  ***/
   private static ContentTemplate pageContentTemplate;
   private static ContentTemplate infoBoxContentTemplate;
   private static ContentTemplate indexInfoBoxContentTemplate;
@@ -83,18 +98,26 @@ public class FicArchiveBuilder {
   
   
   // To use for config
-  // TODO - how to make sure this doesn't override existing settings?
-  // Dear past me: ^^ what the hell does that mean?! ^^
   private static HashSet<String> validConfigSettingSet;
-  private static String[] validConfigSettingNames = new String[] {"title", "sitename", "footer", "sitepath", "maxitemsperpage", "includestylesheets", "showchapternumbers", "casualhtml", "usebylines", "generatefieldlabels", "ignoreleadingthe", "skipjumppagination", "skipemptyfields", "ignoretabs", "skippage", "statswidget", "paginationdivider"};
+  private static String[] validConfigSettingNames = 
+    new String[] {"title", "sitename", "footer", "sitepath", "maxitemsperpage", 
+                  "includestylesheets", "showchapternumbers", "casualhtml", 
+                  "usebylines", "generatefieldlabels", "ignoreleadingthe", 
+                  "skipjumppagination", "skipemptyfields", "ignoretabs", 
+                  "skippage", "statswidget", "paginationdivider"};
   
   // Used to check for a valid metadata field
   private static HashSet<String> validStoryMetadataSet;
-  private static String[] validStoryMetadataTypes = new String[] {"title", "fandom", "fandoms", "author", "creator", "summary", "notes", "end notes", "tags", "characters", "words", "length", "wordcount", "rating", "rated", "complete", "date updated", "updated", "date published", "published", "date posted", "posted"};
+  private static String[] validStoryMetadataTypes = 
+    new String[] {"title", "fandom", "fandoms", "author", "creator", "summary", 
+                  "notes", "end notes", "tags", "characters", "words", "length",
+                  "wordcount", "rating", "rated", "complete", "date updated",
+                  "updated", "date published", "published", "date posted", 
+                  "posted"};
   
   
   /***
-  Strings for various bits and bobs used to create the site.
+    Strings for various bits and bobs used to create the site.
   ***/
   // Used when building chapter pages
   private static String nextChapterButton = "Next Chapter";
@@ -133,21 +156,22 @@ public class FicArchiveBuilder {
   private static String titleTemplate = "{T} - {S}";
   private static String titleBase; // the version with the site name in it
   // Regex template for footers.
-  private static String footerTemplate = "{{SiteName}} | Powered by ChiveGen " + versionString;
+  private static String footerTemplate = "{{SiteName}} | Powered by ChiveGen " 
+                                         + versionString;
   // Built with buildPageFooter()
   private static String standardFooter;
   // What we should prefix links with when linking from
   // an arbitrary page to the index
   private static String sitePath = "/";
-  // TODO: URL customization? (not everyone wants "fandom" in their URL)
+  // Possible future feature - URL customization for category folders
   private static String storyDirectoryName = "stories";
   private static String fandomDirectoryName = "fandom";
   private static String authorDirectoryName = "author";
   private static String tagsDirectoryname = "tag";
   
   /***
-  Default templates for other page elements. These are overridden if an 
-  appropriate file exists.
+    Default templates for other page elements. These are overridden if an 
+    appropriate file exists.
   ***/
   private static String pageTemplate = "<!DOCTYPE html>\n<html>\n<head>"
     + "{{Title}}</head>\n<body>\n{{Main}}\n<footer>{{Footer}}</footer>\n</body>"
@@ -172,40 +196,43 @@ public class FicArchiveBuilder {
     "{{Navigation}}\n<h1>{{ListingTitle}}</h1>\n<h2>{{CurrentlyShowing}}</h2>"
     + "\n{{Pagination}}<div class=listings>{{Listings}}</div>{{Pagination}}";
   private static String fieldTemplate = "{{L}}: {{C}}";
-  private static String summaryTemplate = fieldTemplate;
+  private static String summaryTemplate = fieldTemplate + "DEGBU!!!";
   private static String byLineTemplate = " by {{C}}";
   private static String workIndexNavigationTemplate = 
     "<div class=listingnav>{C}</div>";
   private static String tagTemplate = 
     "<div class=tag><a href=\"{{C}}\">{{L}}</a></div>";
   private static String chapterTitleTemplate = "Chapter {{L}}: {{C}}";
-  // unused
+  // unused, deprecated
   /***private static String tagLastTemplate = 
     "<div class=\"tag last\"><a href=\"{{C}}\">{{L}}</a></div>";***/
   
   /***
-  For template and file reading.
+    Scanner patterns for template and file reading.
   ***/
-  // match {{ or }} only
+  // Match {{ or }} only
   private static Pattern templateDelimiters = Pattern.compile("\\{\\{|\\}\\}");
-  // Use the 0 (end) character as a delimiter for scanning a whole file in as
+  // Stupid hack that should probably be replaced with something more normal -
+  // Use the 0 (end) character as a delimiter for scanning a whole file in as 
   // few loops as possible.
-  private static Pattern fastScanningPattern = Pattern.compile(Character.toString((char)0));
+  private static Pattern fastScanningPattern = 
+    Pattern.compile(Character.toString((char)0));
   
   /***
-  Used to provide formatting for dates such as date updated/date published.
+    To provide formatting for dates such as date updated/date published.
+    Currently unused.
   ***/
   private static DateTimeFormatter dateFormat;
   
   /***
-  Used to created pages for works by tags, fandom, and author.
+    Used to create pages for works by tags, fandom, and author.
   ***/
   private static HashMap<String, ArrayList<Story>> archiveTagMap;
   private static HashMap<String, ArrayList<Story>> archiveFandomMap;
   private static HashMap<String, ArrayList<Story>> archiveAuthorMap;
   
   /***
-  Various other configuration options.
+    Various other configuration options.
   ***/  
   // Maximum number of items per page
   private static int maxItemsPerPage = 20;
@@ -237,11 +264,6 @@ public class FicArchiveBuilder {
   private static boolean skipLatestIndex = false;
   private static boolean skipAuthorIndex = false;
   private static boolean skipTagPages = false;
-  // EXPERIMENTAL - URL divider between name and page # for paginated 
-  // archive categories.
-  // Defaults to '/', creating subfolders for pages of a category, but could
-  // be changed to allow for easier non-recursive page uploading.
-  private static String paginationDivider = "/";
   // Put some stats about the archive on the homepage?
   private static boolean homePageStatsWidget = true;
   // Format dates?
@@ -254,6 +276,15 @@ public class FicArchiveBuilder {
   // just put "undated".
   private static boolean showDefaultDates = false;
   
+  // EXPERIMENTAL - URL divider between name and page # for paginated 
+  // archive categories.
+  // Defaults to '/', creating subfolders for pages of a category, but could
+  // be changed to allow for easier non-recursive page uploading.
+  private static String paginationDivider = "/";
+  
+  /***
+     VERBOSITY - under overhaul/refactor. Current/old settings as follows.
+  ***/
   // Show extra print statements for various functions
   private static boolean verbose = false;
   // Skip some print statements that print by default
@@ -267,6 +298,8 @@ public class FicArchiveBuilder {
   private static boolean archiveHasAuthors = false; // true only if at least one story has an author in the metadata
   private static boolean archiveHasTags = false; // true only if at least one story has tags
 
+  // Main function - NOW DEPRECATED. To be removed once deemed safe to do so.
+  /***
   public static void main(String[] args) {
     long startTime = System.currentTimeMillis(); // Track time it takes for the program to run
     // Parse just the initial folder arguments
@@ -346,7 +379,7 @@ public class FicArchiveBuilder {
     // If we have decided input and template are valid, parse our remaining
     // arguments and build the archive.
     if (readyToBuild) {
-      validConfigSettingSet = GenUtils.hashSetFromArray(validConfigSettingNames);
+      //validConfigSettingSet = GenUtils.hashSetFromArray(validConfigSettingNames);
       // Read the config file, if it exists.
       readConfig();      
       // Parse the other arguments, AFTER config has been taken into account.
@@ -355,16 +388,12 @@ public class FicArchiveBuilder {
       if (skipWorkIndices) {
         skipFandomIndex = skipTitleIndex = skipAuthorIndex = true;
       }
-      // If Casual HTML is enabled, set up the list of acceptable opening tags to ignore paragraphs for
-      if (casualHTML) {
-        nonParagraphHTMLTags = GenUtils.hashSetFromArray(acceptedOpeningHTMLTags);
-      }
       // Check in the input folder for any custom labels to set
       getCustomLabels();
       // Builds the standard content templates
       buildTemplates();
       // Build the archive, and record how long story generation took.
-      long storyTime = build(args);
+      long storyTime = build();
       // Report how long it took to build the site, if it was built.
       long finalTime = System.currentTimeMillis() - startTime;
       System.out.println("Time taken: " + finalTime + " ms.");
@@ -372,198 +401,34 @@ public class FicArchiveBuilder {
                           + storyTime + " ms.");
     }
   }
+  ***/
   
-  // Builds the archive and returns the time it took to generate stories.
-  public static long build(String[] args) {
-    long storyStartTime = 0;
-    long storyEndTime = 0;    
-    // If the output directory doesn't exist, create it
-    if (!output.exists()) {
-      output.mkdirs();
+  /*** PRE-BUILD CONFIGURATION FUNCTIONS ***/
+  
+  // Sets the input, output, and template paths.
+  public static void setFilePaths(File in, File out, File template) {
+    input = in;
+    output = out;
+    templateFile = template;
+  }
+  
+  // Temporary function to set verbosity from ChiveGenMain. Will be replaced
+  // along with all current use of 'verbose' and 'brief' once verbosity overhaul
+  // is complete.
+  public static void setVerbosity(Verbosity v) {
+    if (v.ordinal() <= ChiveGenMain.BRIEF) {
+      brief = true;
+      verbose = false;
+    } else if (v.ordinal() >= ChiveGenMain.VERBOSE) {
+      brief = false;
+      verbose = true;
     }
-    // Create a standard page footer and title (template)
-    standardFooter = buildPageFooter();
-    titleBase = buildPageTitleBase(siteName);
-    try {
-      // Check again that the template file exists, just in case.
-      if (!templateFile.exists()) {
-        throw new FileNotFoundException();
-      }
-      else {
-        if (verbose) {
-          System.out.println("Looking for folders in '" + input.getPath() + "'...");
-        }
-        // Get all the direct subfolders of the input folder
-        // These are our story folders.
-        File[] storyFolders = input.listFiles(new FilenameFilter() {
-        public boolean accept(File dir, String name) {
-          // Get only the directories
-          return (new File(dir, name).isDirectory());
-        }
-        });
-        if (storyFolders.length == 0) {
-          System.out.println("Warning: no story folders found.");
-        }
-        else {           
-          validStoryMetadataSet = GenUtils.hashSetFromArray(validStoryMetadataTypes);
-          if (!brief) {
-            System.out.println("Found " + storyFolders.length + " subfolders in input directory: " + Arrays.toString(storyFolders));
-          }
-        }          
-        // Initialize maps for tags, authors, fandoms
-        archiveTagMap = new HashMap<String, ArrayList<Story>>();
-        archiveAuthorMap = new HashMap<String, ArrayList<Story>>();
-        archiveFandomMap = new HashMap<String, ArrayList<Story>>();
-        // Create initial story array and output folder
-        stories = new Story[storyFolders.length];
-        File storiesOutputFolder = new File(output, "stories");
-        storyStartTime = System.currentTimeMillis();
-        // Generate stories
-        System.out.println("Building stories...");
-        for (int i = 0; i < stories.length; i++) {            
-          stories[i] = new Story(storyFolders[i], storiesOutputFolder);
-          stories[i].buildInfoboxes();
-          if (verbose) {
-            System.out.println("Building story " + stories[i].getStoryTitle() 
-                               + "...");
-          }
-          stories[i].buildStory();
-          addToStoryMap(archiveTagMap, stories[i].getStoryTags(), stories[i]);
-          addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
-          addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
-        }
-        storyEndTime = System.currentTimeMillis();
-        // Build indexes of works by various orderings
-        String currentIndex;                
-        // Create index by title
-        if (!skipTitleIndex) {
-          File allByTitleFolder = new File(output, "by_title");
-          if (!allByTitleFolder.exists()) {
-            allByTitleFolder.mkdirs();
-          }
-          Arrays.sort(stories, new StoryTitleComparator());
-          // Create pages
-          String[] allByTitle = buildCategoryPages("", "by_title", stories, titleIndexLabel, true);
-          for (int i = 0; i < allByTitle.length; i++) {
-            //TODO: make sure this generates pages correctly!
-            buildPage(buildStandardPageString(allByTitle[i], titleIndexLabel + " (Page " + (i+1) + ")"), 
-            new File(allByTitleFolder + paginationDivider + (i+1) + ".html"));
-          }
-        }
-        // Create index of all works in reverse chronological
-        // order, unless this is skipped.
-        if (!skipLatestIndex) {
-          File allByLatestFolder = new File(output, "latest");
-          if (!allByLatestFolder.exists()) {
-            allByLatestFolder.mkdirs();
-          }
-          Arrays.sort(stories, new DateUpdatedComparator());
-          // Create pages
-          String[] allByLatest = buildCategoryPages("", "latest", stories, latestIndexLabel);
-          for (int i = 0; i < allByLatest.length; i++) {
-            // TODO: make sure this generates pages correctly!
-            buildPage(buildStandardPageString(allByLatest[i], latestIndexLabel + " (Page " + (i+1) + ")"), 
-            new File(allByLatestFolder + paginationDivider + (i+1) + ".html"));
-          }
-        }          
-        // Create fandom index if we have at least one fandom
-        if (!skipFandomIndex) {
-          // Generate fandom index page
-          currentIndex = workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveFandomMap, "fandoms", "Fandoms"));
-          // BUILD INDEX PAGE
-          buildPage(buildStandardPageString(currentIndex, buildPageTitle("By Fandom")), new File(output, "by_fandom.html"));
-          if (verbose) {
-            System.out.println("Fandom index page created.");
-          }
-          // Build fandoms pages
-          File fandomFolder = new File(output, "fandoms");
-          if (!fandomFolder.exists()) {
-            fandomFolder.mkdirs();
-          }
-          System.out.println("Generating fandom pages...");
-          buildArchiveCategory(archiveFandomMap, fandomFolder, "Fandoms", "Stories in ");
-        }          
-        // Create authors index if we have at least one author
-        if (!skipAuthorIndex && archiveHasAuthors) {
-          // Generate index page
-          currentIndex = workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveAuthorMap, "authors", "Authors"));
-          // BUILD INDEX PAGE
-          buildPage(buildStandardPageString(currentIndex, buildPageTitle("By Author")), new File(output, "by_author.html"));
-          if (verbose) {
-            System.out.println("Author index page created.");
-          }
-          // Build authors pages
-          File authorFolder = new File(output, "authors");
-          if (!authorFolder.exists()) {
-            authorFolder.mkdirs();
-          }
-          System.out.println("Generating author pages...");
-          buildArchiveCategory(archiveAuthorMap, authorFolder, "Authors", "Stories by ");
-        }
-        // Create tag pages, if any tags are used.
-        if (!skipTagPages && archiveHasTags) {
-          System.out.println("Generating tag pages...");
-          // CREATE TAG FOLDER + PAGES
-          buildArchiveCategory(archiveTagMap, new File(output, "tags"), "Tags", "Stories tagged ");
-        }
-        // Create the site homepage.
-        String homePageContent = "";
-        if (!skipHomepage) {
-          File homePage = new File(input, "index.txt");
-          if (homePage.exists()) {
-            homePageContent = FileToStringUtils.readFileToString(homePage);
-          }
-          else {
-            homePageContent = buildDefaultHomePage();
-          }
-          // Puts some site stats on the homepage, if the option to do so is enabled.
-          if (homePage.exists() && homePageStatsWidget) {
-            // Locate insertion points and insert the stats widget data into the homepage body
-            ContentTemplate homePageTemplate = new ContentTemplate(homePageContent, statsWidgetKeywords);
-            String[] stats = new String[] {HtmlUtils.numberWithCommas(stories.length), HtmlUtils.numberWithCommas(getTotalWordcount(stories)), 
-            HtmlUtils.numberWithCommas(getTotalFandoms(stories)),  HtmlUtils.numberWithCommas(getTotalAuthors(stories)), versionString};
-            // Insert the stats into the homepage text body
-            homePageContent = homePageTemplate.assemble(stats);
-          }
-          // Build the home page at index.html
-          buildPage(buildStandardPageString(homePageContent, buildPageTitle("Home")), new File(output, "index.html"));
-        }
-        // Check for CSS files in input directory, and copy them to the output directory
-        if (includeStyleSheets) {
-          // Get an array of CSS files
-          File[] styleSheets = input.listFiles(new FilenameFilter() {
-          public boolean accept(File dir, String name) {
-            // Get only the directories
-            return (name.endsWith(".css"));
-          }
-          });
-          if (!brief) {
-            System.out.println("Checking for CSS stylesheets...");
-            System.out.println(styleSheets.length + " stylesheets found: " + Arrays.toString(styleSheets));
-          }
-          // Copy all stylesheets to the output folder
-          String styleSheetSource = "";
-          for (File styleSheet : styleSheets) {
-            styleSheetSource = FileToStringUtils.readFileToString(styleSheet);
-            buildPage(styleSheetSource, new File(output, styleSheet.getName()));
-          }
-        }
-      }
-    } catch (FileNotFoundException e) {
-      if (!templateFile.exists()) {
-        System.out.println("Error: required template file " + 
-        templateFile.getPath() + " does not exist.");
-      }
-      System.out.println();
-      e.printStackTrace();
-    }
-    return storyEndTime - storyStartTime;
   }
   
   // Checks in the input folder for any custom label files (field labels, 
   // ratings, completion codes, etc.), reads in the files and sets them in
   // the global archive settings.
-  private static void getCustomLabels() {
+  public static void getCustomLabels() {
     // Check for files with labels, ratings, etc, and use them to 
     // override defaults if so.
     File fieldLabels = new File(input, "labels.txt");
@@ -590,8 +455,98 @@ public class FicArchiveBuilder {
     }
   }
   
+  // Reads a set of field labels from file.
+  // File must have ALL labels included, even non-custom ones!
+  public static void setFieldLabels(File labelsFile) {
+    try {
+      Scanner labelReader = new Scanner(labelsFile);
+      // Used when building chapter pages
+      try {
+        nextPageLabel = labelReader.nextLine();
+        prevPageLabel = labelReader.nextLine();
+        nextChapterButton = labelReader.nextLine();
+        prevChapterButton = labelReader.nextLine();
+        tocButton = labelReader.nextLine();
+        fandomLabel = labelReader.nextLine();
+        authorLabel = labelReader.nextLine();
+        updatedLabel = labelReader.nextLine();
+        publishedLabel = labelReader.nextLine();
+        wordcountLabel = labelReader.nextLine();
+        chapterCountLabel = labelReader.nextLine();
+        completionLabel = labelReader.nextLine();
+        summaryLabel = labelReader.nextLine();
+        tagsLabel = labelReader.nextLine();
+        ratingLabel = labelReader.nextLine();
+        notesLabel = labelReader.nextLine();
+        endNotesLabel = labelReader.nextLine();
+      } catch (NoSuchElementException e) {
+        System.out.println("Error: reached the end of the field labels file too"
+                           + " early. Make sure all fields are accounted for!");
+        labelReader.close();
+        return; // stop trying to read the file
+      }
+      labelReader.close();
+    } catch (FileNotFoundException e) {
+      System.out.println("Error: tried to read the field labels file, but it "
+                         + "could not be found.");
+      e.printStackTrace();
+    }
+  }
+  
+  // Reads a set of ratings from file as the archive ratings.
+  // File must have ALL labels included, even non-custom ones!
+  public static void setRatings(File ratingsList) {
+    try {
+      Scanner ratingsReader = new Scanner(ratingsList);
+      // Used when building chapter pages
+      try {
+        ratingLevelG = ratingsReader.nextLine();
+        ratingLevelPG = ratingsReader.nextLine();
+        ratingLevelT = ratingsReader.nextLine();
+        ratingLevelM = ratingsReader.nextLine();
+        ratingLevelE = ratingsReader.nextLine();
+        ratingLevelNR = ratingsReader.nextLine();
+      } catch (NoSuchElementException e) {
+        System.out.println("Error: reached the end of the ratings file too "
+                           + "early. Make sure all ratings are accounted for. "
+                           + "To skip a label, put a blank line!");
+        ratingsReader.close();
+        return; // stop trying to read the file
+      }
+      ratingsReader.close();
+    } catch (FileNotFoundException e) {
+      System.out.println("Error: tried to read the ratings file, but it could "
+                         + "not be found.");
+      e.printStackTrace();
+    }
+  }
+  
+  // Reads a set of strings from file as the completion statuses.
+  public static void setCompletionStatuses(File statuses) {
+    try {
+      Scanner statusReader = new Scanner(statuses);
+      // Used when building chapter pages
+      try {
+        completionStatuses[0] = statusReader.nextLine();
+        completionStatuses[1] = statusReader.nextLine();
+      } catch (NoSuchElementException e) {
+        System.out.println("Error: reached the end of the completion statuses "
+                           + "file too early. If you want one to be blank, put "
+                           + "a blank line!");
+        statusReader.close();
+        return; // stop trying to read the file
+      }
+      statusReader.close();
+    } catch (FileNotFoundException e) {
+      System.out.println("Error: tried to read the completion statuses file, "
+                         + "but it could not be found.");
+      e.printStackTrace();
+    }
+  }
+
+  
   // Builds all of the various ContentTemplates use to generate site HTML
-  private static void buildTemplates() {
+  public static void buildTemplates() {
     // Generate the content templates from the various input files.
     System.out.println("Building content templates...");
     pageTemplate = getTemplateFromFile(templateFile, pageTemplate);
@@ -602,6 +557,9 @@ public class FicArchiveBuilder {
     chapterTitleTemplate = 
       getTemplateFromFile(new File(input, "chaptertitles.txt"), 
                           chapterTitleTemplate);
+    summaryTemplate = 
+      getTemplateFromFile(new File(input, "summaries.txt"), 
+                          summaryTemplate);
     if (verbose) {
       System.out.println("Constructing standard page template...");
     }
@@ -613,9 +571,15 @@ public class FicArchiveBuilder {
     infoBoxContentTemplate = new ContentTemplate(new File(input, "infobox.txt"),
                                                  storyInfoKeywords,
                                                  storyInfoTemplate);
-    indexInfoBoxContentTemplate = 
-      new ContentTemplate(new File(input, "infobox_index.txt"), 
-                          storyInfoKeywords, storyInfoTemplate);
+    // If we have a specific index infobox style, build that template;
+    // otherwise, use the default infobox that we've already established
+    if ((new File(input, "infobox_index.txt").exists())) {
+      indexInfoBoxContentTemplate = 
+        new ContentTemplate(new File(input, "infobox_index.txt"), 
+                            storyInfoKeywords, storyInfoTemplate);
+    } else {
+      indexInfoBoxContentTemplate = infoBoxContentTemplate;
+    }
     if (verbose) {
       System.out.println("Constructing chapter page template...");
     }
@@ -665,7 +629,29 @@ public class FicArchiveBuilder {
     tagContentTemplate = new ContentTemplate(tagTemplate, fieldKeywords);
   }
   
-  // Quick parse for true/false text
+  // Returns either the string contents of the File argument, or the original
+  // String argument if no such File exists.
+  public static String getTemplateFromFile(File f, String s) {
+    if (f.exists()) {
+      if (!brief) {
+        System.out.println("'" + f.getName() + "' found in input directory." +
+        " Reading to string...");
+      }
+      /***
+      ChiveGenMain.printStatus("'" + f.getName() + "' found in input directory."
+                               + " Reading to string...",
+                               Verbosity.NORMAL);
+                               ***/
+      s = FileToStringUtils.readFileToString(f);
+    }
+    return s;
+  }
+  
+  // Helper function for quickly parsing true/false text. Accepts a boolean and
+  // either the string 'true' or 'false', and returns true if the string starts
+  // with 't' or false if it starts with 'f'.
+  // If the string begins with neither character (meaning it was invalid), 
+  // the function returns the original boolean.
   public static boolean quickParseTrueFalse(String s, boolean b) {
     s = s.toLowerCase();
     if (s.charAt(0) == 't') {
@@ -678,14 +664,27 @@ public class FicArchiveBuilder {
       System.out.println("Error: expected 'true' or 'false' but instead found '"
        + s + "'. Returning default...");
     }
+    /***
+    ChiveGenMain.printStatus("Error: expected 'true' or 'false' but instead "
+                              + "found '" + s + "'. Returning default...",
+                              Verbosity.NORMAL);
+    ***/
     return b; // default to existing value
   }
   
-  //TODO - WIP, implementing config file
+  // Reads the config.txt file from the established input folder and parses
+  // settings appropriately.
   public static void readConfig() {
+    if (!input.exists()) {
+      System.out.println("Error: tried to read config, but no input file "
+                         + "exists.");
+      return;
+    }
     File siteConfigFile = new File(input, "config.txt");
+    validConfigSettingSet = GenUtils.hashSetFromArray(validConfigSettingNames);
     if (siteConfigFile.exists()) {
-      System.out.println("Config file detected. Config settings will be used unless contradicted by command line arguments.");
+      System.out.println("Config file detected. Config settings will be used "
+        + "unless contradicted by command line arguments.");
       //read config file
       // for each line: use a hashset to check that the label is valid, 
       // then switch statement using 1st char and disambig from there
@@ -767,15 +766,23 @@ public class FicArchiveBuilder {
                     else if (currentLineData[0].charAt(4) == 'p') {
                       String[] pagesToSkip = currentLineData[1].split(",");
                       for (String s : pagesToSkip) {
-                        s = s.toLowerCase();
-                        skipHomepage = s.equals("home");
-                        skipWorkIndices = s.equals("all");
-                        skipFandomIndex = s.equals("fandom");
-                        skipTitleIndex = s.equals("title");
-                        skipLatestIndex = s.equals("latest");
-                        skipAuthorIndex = s.equals("author");
-                        skipTagPages = s.equals("tags");
-                      }
+				                s = s.toLowerCase();
+				                if (s.equals("all")) {
+				                  skipWorkIndices = true;
+				                } else if (s.equals("author")) {
+				                  skipAuthorIndex = true;
+				                } else if (s.equals("home")) {
+				                  skipHomepage = true;
+				                } else if (s.equals("fandom")) {
+				                  skipFandomIndex = true;
+				                } else if (s.equals("latest")) {
+				                  skipLatestIndex = true;
+				                } else if (s.equals("tags")) {
+				                  skipTagPages = true;
+				                } else if (s.equals("title")) {
+				                  skipTitleIndex = true;
+				                }
+				              }
                     }
                   }
                   // st...
@@ -813,12 +820,14 @@ public class FicArchiveBuilder {
   }
   
   // Looks at args to get input and output folders
-  // TODO: WIP - make sure this works!!
+  // DEPRECATED - these controls are being moved to ChiveGenMain.
+  /***
   public static void parseFolderArgs(String[] args) {
     // Print a warning if there are no arguments given
     if (args.length == 0) {
       building = false;
-      System.out.println("You must supply at least one argument. Try Try '--man' or '--help' if you need the manual.");
+      System.out.println("You must supply at least one argument. "
+                         + "Try '--man' or '--help' if you need the manual.");
     }
     for (int i = 0; i < args.length; i++) {
       if (args[i].equals("-i") || args[i].equals("-input")) {
@@ -870,20 +879,24 @@ public class FicArchiveBuilder {
       }
     }
   }
+  ***/
   
-  // Parses the argument list for main, and sets a number of variables
+  // Parses the argument list for main, and sets relevant internal variables
   // based on this input.
   public static void parseArgs(String[] args) {
+    /***
     // Print a warning if there are no arguments given
     if (args.length == 0) {
       building = false;
-      System.out.println("You must supply at least one argument. Try '--man' or '--help' if you need the manual.");
+      System.out.println("You must supply at least one argument. " +
+                         "Try '--man' or '--help' if you need the manual.");
     }
+    ***/
     // Go through the arguments in order and read them
     for (int i = 0; i < args.length; i++) {
       if (args[i].equals("-s") || args[i].equals("-site-name")) {
         if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no site name was supplied.");
+          printArgsError(args[i], "site name");
         }
         else {
           siteName = args[i+1];
@@ -892,7 +905,7 @@ public class FicArchiveBuilder {
       }
       else if (args[i].equals("-tf") || args[i].equals("-title")) {
         if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no title was supplied.");
+          printArgsError(args[i], "title");
         }
         else {
           titleTemplate = args[i+1];
@@ -901,7 +914,7 @@ public class FicArchiveBuilder {
       }
       else if (args[i].equals("-ff") || args[i].equals("-footer")) {
         if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no footer was supplied.");
+          printArgsError(args[i], "footer");
         }
         else {
           footerTemplate = args[i+1];
@@ -910,31 +923,23 @@ public class FicArchiveBuilder {
       }
       else if (args[i].equals("-url") || args[i].equals("-site-path")) {
         if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no site path was supplied.");
+          printArgsError(args[i], "site path");
         }
         else {
           sitePath = args[i+1];
           i++;
         }
       }
-      else if (args[i].equals("-pd") || args[i].equals("-pagination-divider")) {
-        if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no site path was supplied.");
-        }
-        else {
-          paginationDivider = args[i+1];
-          i++;
-        }
-      }
       else if (args[i].equals("-mpp") || args[i].equals("-per-page")) {
-        if (i == args.length - 1) {
-          System.out.println("Error: argument " + args[i] + " was given, but no number was supplied.");
+        if (i == args.length - 1) {        
+          printArgsError(args[i], "number");
         }
         else {
           try {
             maxItemsPerPage = Integer.parseInt(args[i+1]);
             if (maxItemsPerPage < 1) {
-              System.out.println("Error: maximum items per page must be at least 1.");
+              System.out.println("Error: maximum items per page must be at "
+                                 + "least 1.");
               maxItemsPerPage = 1;
             }
           } catch (IllegalArgumentException e) {
@@ -945,6 +950,7 @@ public class FicArchiveBuilder {
         }
       }
       else if (args[i].equals("-v") || args[i].equals("--verbose")) {
+        // SOON TO BE DEPRECATED as of ongoing verbosity overhaul
         verbose = true;
         brief = false;
       }
@@ -985,7 +991,8 @@ public class FicArchiveBuilder {
       else if (args[i].equals("-by") || args[i].equals("--use-byline")) {
         useByLine = true;
       }
-      else if (args[i].equals("-sef") || args[i].equals("--skip-empty-fields")) {
+      else if (args[i].equals("-sef") ||
+                 args[i].equals("--skip-empty-fields")) {
         skipEmptyFields = true;
       }
       else if (args[i].equals("--skip-jump")) {
@@ -1009,112 +1016,275 @@ public class FicArchiveBuilder {
     }
   }
   
-  
-  // Returns either the string contents of the File argument, or the original
-  // String argument if no such File exists.
-  public static String getTemplateFromFile(File f, String s) {
-    if (f.exists()) {
-      if (!brief) {
-        System.out.println("'" + f.getName() + "' found in input directory." +
-        " Reading to string...");
-      }
-      s = FileToStringUtils.readFileToString(f);
+  // Helper function for printing certain argument parsing error messages.
+  private static void printArgsError(String arg, String argType) {
+    if (!brief) {
+      System.out.println("Error: argument " + arg + " was given, but no "
+                         + argType + " was supplied.");
     }
-    return s;
+    /***
+    ChiveGenMain.printStatus("Error: argument " + arg + " was given, but no "
+                             + argType + " was supplied.", Verbosity.BRIEF);
+                             ***/
   }
   
-  // Reads a set of field labels from file.
-  // File must have ALL labels included, even non-custom ones!
-  public static void setFieldLabels(File labelsFile) {
+  
+  /*** ARCHIVE BUILD FUNCTION ***/
+  
+  // Builds the archive and returns the time it took to generate stories.
+  public static long build() {
+    if (skipWorkIndices) {
+      skipFandomIndex = skipTitleIndex = skipAuthorIndex = true;
+    }
+    // Keep track of the time taken to build stories, specifically.
+    long storyStartTime = 0;
+    long storyEndTime = 0;    
+    // If the output directory doesn't exist, create it
+    if (!output.exists()) {
+      output.mkdirs();
+    }
+    // Create a standard page footer and title (template)
+    standardFooter = buildPageFooter();
+    titleBase = buildPageTitleBase(siteName);
     try {
-      Scanner labelReader = new Scanner(labelsFile);
-      // Used when building chapter pages
-      try {
-        nextPageLabel = labelReader.nextLine();
-        prevPageLabel = labelReader.nextLine();
-        nextChapterButton = labelReader.nextLine();
-        prevChapterButton = labelReader.nextLine();
-        tocButton = labelReader.nextLine();
-        fandomLabel = labelReader.nextLine();
-        authorLabel = labelReader.nextLine();
-        updatedLabel = labelReader.nextLine();
-        publishedLabel = labelReader.nextLine();
-        wordcountLabel = labelReader.nextLine();
-        chapterCountLabel = labelReader.nextLine();
-        completionLabel = labelReader.nextLine();
-        summaryLabel = labelReader.nextLine();
-        tagsLabel = labelReader.nextLine();
-        ratingLabel = labelReader.nextLine();
-        notesLabel = labelReader.nextLine();
-        endNotesLabel = labelReader.nextLine();
-      } catch (NoSuchElementException e) {
-        System.out.println("Error: reached the end of the field labels file too early. Make sure all fields are accounted for!");
-        labelReader.close();
-        return; // stop trying to read the file
+      // Check again that the template file exists, just in case.
+      if (!templateFile.exists()) {
+        throw new FileNotFoundException();
       }
-      labelReader.close();
+      else {
+        if (verbose) {
+          System.out.println("Looking for folders in '" + input.getPath()
+                             + "'...");
+        }
+        /***
+        ChiveGenMain.printStatus("Looking for folders in '" + input.getPath() 
+                                 + "'...", Verbosity.VERBOSE);
+                                 ***/
+        // Get all the direct subfolders of the input folder
+        // These are our story folders.
+        File[] storyFolders = input.listFiles(new FilenameFilter() {
+        public boolean accept(File dir, String name) {
+          // Get only the directories
+          return (new File(dir, name).isDirectory());
+        }
+        });
+        if (storyFolders.length == 0) {
+          System.out.println("Warning: no story folders found.");
+        }
+        else {           
+          validStoryMetadataSet = 
+            GenUtils.hashSetFromArray(validStoryMetadataTypes);
+          if (!brief) {
+            System.out.print("Found " + storyFolders.length 
+                               + " subfolders in input directory: ");
+            for (int i = 0; i < storyFolders.length - 1; ++i) {
+              System.out.print(storyFolders[i].getName() + ", ");
+            }
+            System.out.println(storyFolders[storyFolders.length - 1].getName());
+          }
+        }          
+        // Initialize maps for tags, authors, fandoms
+        archiveTagMap = new HashMap<String, ArrayList<Story>>();
+        archiveAuthorMap = new HashMap<String, ArrayList<Story>>();
+        archiveFandomMap = new HashMap<String, ArrayList<Story>>();
+        // Create initial story array and output folder
+        stories = new Story[storyFolders.length];
+        File storiesOutputFolder = new File(output, "stories");
+        storyStartTime = System.currentTimeMillis();
+        // Generate stories
+        System.out.println("Building stories...");
+        for (int i = 0; i < stories.length; i++) {            
+          stories[i] = new Story(storyFolders[i], storiesOutputFolder);
+          stories[i].buildInfoboxes();
+          if (verbose) {
+            System.out.println("Building story " + stories[i].getStoryTitle() 
+                               + "...");
+          }
+          stories[i].buildStory();
+          addToStoryMap(archiveTagMap, stories[i].getStoryTags(), stories[i]);
+          addToStoryMap(archiveAuthorMap, stories[i].getAuthors(), stories[i]);
+          addToStoryMap(archiveFandomMap, stories[i].getFandoms(), stories[i]);
+        }
+        storyEndTime = System.currentTimeMillis();
+        // Build indexes of works by various orderings
+        String currentIndex;                
+        // Create index by title
+        if (!skipTitleIndex) {
+          File allByTitleFolder = new File(output, "by_title");
+          if (!allByTitleFolder.exists()) {
+            allByTitleFolder.mkdirs();
+          }
+          Arrays.sort(stories, new StoryTitleComparator());
+          // Create pages
+          String[] allByTitle = buildCategoryPages("", "by_title", stories, 
+                                                   titleIndexLabel, true);
+          for (int i = 0; i < allByTitle.length; i++) {
+            buildPage(buildStandardPageString(allByTitle[i], titleIndexLabel 
+                                                             + " (Page " + (i+1)
+                                                              + ")"), 
+            new File(allByTitleFolder + paginationDivider + (i+1) + ".html"));
+          }
+        }
+        // Create index of all works in reverse chronological
+        // order, unless this is skipped.
+        if (!skipLatestIndex) {
+          File allByLatestFolder = new File(output, "latest");
+          if (!allByLatestFolder.exists()) {
+            allByLatestFolder.mkdirs();
+          }
+          Arrays.sort(stories, new DateUpdatedComparator());
+          // Create pages
+          String[] allByLatest = buildCategoryPages("", "latest", stories, 
+                                                    latestIndexLabel);
+          for (int i = 0; i < allByLatest.length; i++) {
+            buildPage(buildStandardPageString(allByLatest[i], latestIndexLabel 
+                                                              + " (Page " 
+                                                              + (i+1) + ")"), 
+            new File(allByLatestFolder + paginationDivider + (i+1) + ".html"));
+          }
+        }          
+        // Create fandom index if we have at least one fandom
+        if (!skipFandomIndex) {
+          // Generate fandom index page
+          currentIndex = 
+            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveFandomMap, "fandoms", "Fandoms"));
+          // BUILD INDEX PAGE
+          buildPage(buildStandardPageString(currentIndex, 
+                                            buildPageTitle("By Fandom")),
+                    new File(output, "by_fandom.html"));
+          if (verbose) {
+            System.out.println("Fandom index page created.");
+          }
+          /***
+          ChiveGenMain.printStatus("Fandom index page created.",
+                                   Verbosity.VERBOSE);
+                                   ***/
+          // Build fandoms pages
+          File fandomFolder = new File(output, "fandoms");
+          if (!fandomFolder.exists()) {
+            fandomFolder.mkdirs();
+          }
+          System.out.println("Generating fandom pages...");
+          //ChiveGenMain.printStatus("Generating fandom pages...",
+          //                         Verbosity.SILENT);
+          buildArchiveCategory(archiveFandomMap, fandomFolder, "Fandoms", 
+                               "Stories in ");
+        }          
+        // Create authors index if we have at least one author
+        if (!skipAuthorIndex && archiveHasAuthors) {
+          // Generate index page
+          currentIndex = 
+            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveAuthorMap, 
+                                                                       "authors",
+                                                                       "Authors"));
+          // BUILD INDEX PAGE
+          buildPage(buildStandardPageString(currentIndex, 
+                                            buildPageTitle("By Author")), 
+                    new File(output, "by_author.html"));
+          if (verbose) {
+            System.out.println("Author index page created.");
+          }
+          /***
+          ChiveGenMain.printStatus("Author index page created.",
+                                   Verbosity.VERBOSE);
+                                   ***/
+          // Build authors pages
+          File authorFolder = new File(output, "authors");
+          if (!authorFolder.exists()) {
+            authorFolder.mkdirs();
+          }
+          System.out.println("Generating author pages...");
+          //ChiveGenMain.printStatus("Generating author pages...",
+          //                         Verbosity.SILENT);
+          buildArchiveCategory(archiveAuthorMap, authorFolder, "Authors", 
+                               "Stories by ");
+        }
+        // Create tag pages, if any tags are used.
+        if (!skipTagPages && archiveHasTags) {
+          System.out.println("Generating tag pages...");          
+          //ChiveGenMain.printStatus("Generating tag pages...",
+          //                         Verbosity.SILENT);
+          // CREATE TAG FOLDER + PAGES
+          buildArchiveCategory(archiveTagMap, new File(output, "tags"), "Tags", 
+                               "Stories tagged ");
+        }
+        // Create the site homepage.
+        String homePageContent = "";
+        if (!skipHomepage) {
+          File homePage = new File(input, "index.txt");
+          if (homePage.exists()) {
+            homePageContent = FileToStringUtils.readFileToString(homePage);
+          }
+          else {
+            homePageContent = buildDefaultHomePage();
+          }
+          // Puts some site stats on the homepage, if the option to do so is
+          // enabled.
+          if (homePage.exists() && homePageStatsWidget) {
+            // Locate insertion points and insert the stats widget data into the
+            // homepage body
+            ContentTemplate homePageTemplate = 
+              new ContentTemplate(homePageContent, statsWidgetKeywords);
+            String[] stats = 
+              new String[] {HtmlUtils.numberWithCommas(stories.length), 
+                            HtmlUtils.numberWithCommas(getTotalWordcount(stories)), 
+                            HtmlUtils.numberWithCommas(getTotalFandoms(stories)), 
+                            HtmlUtils.numberWithCommas(getTotalAuthors(stories)), 
+                            versionString};
+            // Insert the stats into the homepage text body
+            homePageContent = homePageTemplate.assemble(stats);
+          }
+          // Build the home page at index.html
+          buildPage(buildStandardPageString(homePageContent, 
+                                            buildPageTitle("Home")), 
+                                            new File(output, "index.html"));
+        }
+        // Check for CSS files in input directory, and copy them over to the
+        // output directory
+        if (includeStyleSheets) {
+          // Get an array of CSS files
+          File[] styleSheets = input.listFiles(new FilenameFilter() {
+          public boolean accept(File dir, String name) {
+            // Get only the directories
+            return (name.endsWith(".css"));
+          }
+          });
+          if (!brief) {
+            System.out.println("Checking for CSS stylesheets...");
+            System.out.println(styleSheets.length + " stylesheets found: " 
+                               + Arrays.toString(styleSheets));
+          }
+          // Copy all stylesheets to the output folder
+          String styleSheetSource = "";
+          for (File styleSheet : styleSheets) {
+            styleSheetSource = FileToStringUtils.readFileToString(styleSheet);
+            buildPage(styleSheetSource, new File(output, styleSheet.getName()));
+          }
+        }
+      }
     } catch (FileNotFoundException e) {
-      System.out.println("Error: tried to read the field labels file, but it could not be found.");
+      if (!templateFile.exists()) {
+        System.out.println("Error: required template file " + 
+        templateFile.getPath() + " does not exist.");
+      }
+      System.out.println();
       e.printStackTrace();
     }
-  }
-  
-  // Reads a set of ratings from file as the archive ratings.
-  // File must have ALL labels included, even non-custom ones!
-  public static void setRatings(File ratingsList) {
-    try {
-      Scanner ratingsReader = new Scanner(ratingsList);
-      // Used when building chapter pages
-      try {
-        ratingLevelG = ratingsReader.nextLine();
-        ratingLevelPG = ratingsReader.nextLine();
-        ratingLevelT = ratingsReader.nextLine();
-        ratingLevelM = ratingsReader.nextLine();
-        ratingLevelE = ratingsReader.nextLine();
-        ratingLevelNR = ratingsReader.nextLine();
-      } catch (NoSuchElementException e) {
-        System.out.println("Error: reached the end of the ratings file too early. " + 
-        "Make sure all ratings are accounted for. If you want to not include one, put a blank line!");
-        ratingsReader.close();
-        return; // stop trying to read the file
-      }
-      ratingsReader.close();
-    } catch (FileNotFoundException e) {
-      System.out.println("Error: tried to read the ratings file, but it could not be found.");
-      e.printStackTrace();
-    }
-  }
-  
-  // Reads a set of strings from file as the completion statuses.
-  public static void setCompletionStatuses(File statuses) {
-    try {
-      Scanner statusReader = new Scanner(statuses);
-      // Used when building chapter pages
-      try {
-        completionStatuses[0] = statusReader.nextLine();
-        completionStatuses[1] = statusReader.nextLine();
-      } catch (NoSuchElementException e) {
-        System.out.println("Error: reached the end of the completion statuses file too early. If you want one to be blank, put a blank line!");
-        statusReader.close();
-        return; // stop trying to read the file
-      }
-      statusReader.close();
-    } catch (FileNotFoundException e) {
-      System.out.println("Error: tried to read the completion statuses file, but it could not be found.");
-      e.printStackTrace();
-    }
-  }
-  
+    return storyEndTime - storyStartTime;
+  }  
+   
   // Creates an HTML file and writes the input String to it
   public static File buildPage(String inputString, File outputFile) {
     if (!outputFile.exists()) {
       if (verbose) {
-        System.out.println("Creating '" + outputFile.getPath() + "', since it does not already exist");
+        System.out.println("Creating '" + outputFile.getPath() + "', since it "
+                           + "does not already exist");
       }
       try {
         outputFile.createNewFile();
       } catch (IOException e) {
-        System.out.println("Error: something went wrong while building a page in " + outputFile.getPath());
+        System.out.println("Error: something went wrong building a page in "
+                           + outputFile.getPath());
         e.printStackTrace();
       }
     }
@@ -1141,8 +1311,10 @@ public class FicArchiveBuilder {
   }
   
   // Used to build a standard page string
-  public static String buildStandardPageString(String inputString, String pageTitle) {
-    return pageContentTemplate.assemble(new String[] {pageTitle, inputString, standardFooter});
+  public static String buildStandardPageString(String inputString, 
+                                               String pageTitle) {
+    return pageContentTemplate.assemble(new String[] {pageTitle, inputString, 
+                                                      standardFooter});
   }
   
   // Builds a page title using regex and a template.
@@ -1193,6 +1365,9 @@ public class FicArchiveBuilder {
     return "<p>Welcome to " + siteName + "!</p>";
   }
   
+  
+  /*** BUILDING INDICES FOR ARCHIVE ***/
+  
   // Returns an array of three strings - the listing nav, the category name
   // and the string for the index of categories. Used to build the fandom 
   // and author indexes.
@@ -1218,7 +1393,8 @@ public class FicArchiveBuilder {
         a = Character.toUpperCase(categoryArray[i-1].charAt(0));
       }
       if (verbose) {
-        System.out.println(i + ": Grouping for " + categoryArray[i] + ": " + Character.toString(b));
+        System.out.println(i + ": Grouping for " + categoryArray[i] + ": "
+                           + Character.toString(b));
       }
       // Check if the current entry and the next's grouping match,
       // Or if we are on the first story in the array.
@@ -1233,9 +1409,11 @@ public class FicArchiveBuilder {
         listingNav.append("<a href=#" + b + ">" + b + "</a>\n");
       }
       // Link to the first page of the category
-      categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/" + HtmlUtils.toSafeUrl(categoryArray[i]) + 
+      categoryIndex.append("<li><a href=\"" + sitePath + categoryFolderURL + "/"
+                           + HtmlUtils.toSafeUrl(categoryArray[i]) + 
       paginationDivider + "1.html\">" + 
-      HtmlUtils.toTitleCase(categoryArray[i]) + "</a> (" + categories.get(categoryArray[i]).size() + ")</li>");
+      HtmlUtils.toTitleCase(categoryArray[i]) + "</a> (" + 
+                            categories.get(categoryArray[i]).size() + ")</li>");
     }
     // Close the last unordered list
     if (categoryArray.length != 0) {
@@ -1243,13 +1421,18 @@ public class FicArchiveBuilder {
     }
     String listingNavString = "";
     if (!listingNav.equals("")) { // only create this if there's something to put in it
-      listingNavString = workIndexNavigationTemplate.replace("{C}", listingNav.toString()).replace("{L}", "Navigation");;
+      listingNavString = 
+        workIndexNavigationTemplate.replace("{C}", listingNav.toString()).replace("{L}", "Navigation");;
     }
-    return new String[] {listingNavString, categoryName, "", categoryIndex.toString(), ""};
+    return new String[] {listingNavString, categoryName, "", 
+                         categoryIndex.toString(), ""};
   }  
   
   // Build all the pages for a category like tags/fandom/author/etc
-  public static void buildArchiveCategory(HashMap<String, ArrayList<Story>> map, File categoryFolder, String categoryLabel, String titleLabel) {
+  public static void buildArchiveCategory(HashMap<String, ArrayList<Story>> map,
+                                          File categoryFolder, 
+                                          String categoryLabel, 
+                                          String titleLabel) {
     // Create the tag folder if it doesn't already exist
     if (!categoryFolder.exists()) {
       categoryFolder.mkdirs();
@@ -1269,23 +1452,30 @@ public class FicArchiveBuilder {
       String[] pages = buildCategoryPages(categoryFolder.getName() + "/", 
       category, map.get(category), (titleLabel + HtmlUtils.toTitleCase(category)));
       if (verbose) {
-        System.out.println("Created " + pages.length + " page[s] for category " + category);
+        System.out.println("Created " + pages.length + " page[s] for category "
+                           + category);
       }
       for (int i = 0; i < pages.length; i++) {
         if (paginationDivider.equals("/")) {
-          buildPage(buildStandardPageString(pages[i], (titleLabel + HtmlUtils.toTitleCase(category) + " (Page " + (i+1) + ")")), 
+          buildPage(buildStandardPageString(pages[i], 
+                    (titleLabel + HtmlUtils.toTitleCase(category) + " (Page " + (i+1) + ")")), 
           new File(categorySubfolder, (i+1) + ".html")); // page URLs start at 1
         }
         else {
-          buildPage(buildStandardPageString(pages[i], (titleLabel + HtmlUtils.toTitleCase(category) + " (Page " + (i+1) + ")")), 
+          buildPage(buildStandardPageString(pages[i], 
+                    (titleLabel + HtmlUtils.toTitleCase(category) + " (Page " + (i+1) + ")")), 
           new File(categorySubfolder + paginationDivider + (i+1) + ".html"));
         }
       }
     }
     if (!brief) {
-      System.out.println("Created " + map.keySet().size() + " category folder[s] for " + categoryLabel);
+      System.out.println("Created " + map.keySet().size() 
+                         + " category folder[s] for " + categoryLabel);
     }
   }
+  
+
+  /*** BUILDING CATEGORY PAGES ***/
   
   // Create a string array for all pages of all works with a particular tag
   // or category, sorted in reverse chronological order, with pagination
@@ -1313,7 +1503,8 @@ public class FicArchiveBuilder {
     // Build all pages under the category except for the final page
     for (int i = 0; i < totalPages - 1; i++) {
       pageOutput = new StringBuilder(); // for building the main page content
-      // For entries in relatedStories at ids i * maxPerPage + 0 to i * maxPerPage + maxPerPage - 1
+      // For entries in relatedStories at ids
+      // i * maxPerPage + 0 to i * maxPerPage + maxPerPage - 1
       // (i.e. 0th to maxPerPage-1th from an offset of maxPerPage * however
       // many pages have been created already), build an index page.
       for (int j = 0; j < maxItemsPerPage; j++) {
@@ -1321,10 +1512,14 @@ public class FicArchiveBuilder {
         pageOutput.append(relatedStories.get((i * maxItemsPerPage) + j).getInfoboxForIndex());
       }
       // Create page elements array
-      indexPageElements = new String[] {"", categoryLabel, 
-      ("Showing " + ((i * maxItemsPerPage) + 1) + "-" + ((i + 1) * maxItemsPerPage) + " of " + relatedStories.size()),
+      indexPageElements =
+        new String[] {"", categoryLabel, 
+                      ("Showing " + ((i * maxItemsPerPage) + 1) + "-" 
+                      + ((i + 1) * maxItemsPerPage) + " of " 
+                      + relatedStories.size()),
       pageOutput.toString(), 
-      buildStandardPaginationString(generatePagination(categoryFolderURL + category, (i + 1), totalPages))};
+      buildStandardPaginationString(generatePagination(categoryFolderURL + category,
+                                                       (i + 1), totalPages))};
       pageStrings[i] = workIndexContentTemplate.assemble(indexPageElements);
     }
     // Generate the last page, which might not be full length.
@@ -1333,10 +1528,14 @@ public class FicArchiveBuilder {
       pageOutput.append(relatedStories.get(i).getInfoboxForIndex());
     }
     // Create page elements array for the final page
-    indexPageElements = new String[] {"", categoryLabel, 
-    ("Showing " + ((maxItemsPerPage * (totalPages - 1)) + 1) + "-" + relatedStories.size() + " of " + relatedStories.size()), 
+    indexPageElements =
+      new String[] {"", categoryLabel, 
+                    ("Showing " + ((maxItemsPerPage * (totalPages - 1)) + 1) 
+                    + "-" + relatedStories.size() + " of " 
+                    + relatedStories.size()), 
     pageOutput.toString(),
-    buildStandardPaginationString(generatePagination(categoryFolderURL + category, totalPages, totalPages))};
+    buildStandardPaginationString(generatePagination(categoryFolderURL + category,
+                                                     totalPages, totalPages))};
     // Insert the resulting page into the last entry of pageStrings
     pageStrings[totalPages - 1] = workIndexContentTemplate.assemble(indexPageElements);
     // Return the array
@@ -1444,6 +1643,9 @@ public class FicArchiveBuilder {
     return paginationContents;
   }
   
+
+  /*** MISCELLANOUS ARCHIVE-BUILDING HELPER FUNCTIONS ***/
+  
   // Used to build a standard pagination string
   public static String buildStandardPaginationString(String[] inputStrings) {
     return paginationContentTemplate.assemble(inputStrings);
@@ -1516,7 +1718,9 @@ public class FicArchiveBuilder {
       map.put(tag, temp);
     }
   }
-    
+  
+  /*** EXTERNALLY CALLABLE HELPER FUNCTIONS - GETTERS  ***/
+  
   // Get verbosity setting
   public static boolean isVerbose() {
     return verbose;
@@ -1743,8 +1947,8 @@ public class FicArchiveBuilder {
     return skipEmptyFields;
   }
   
-  // Gets whether or not to build fields from template. If false, the infobox template
-  // should already have them built in.
+  // Gets whether or not to build fields from template. 
+  // If false, the infobox template should already have them built in.
   public static boolean generateInfoBoxTemplateFields() {
     return generateInfoBoxTemplateFields;
   }
@@ -1785,6 +1989,8 @@ public class FicArchiveBuilder {
     return paginationDivider;
   }
   
+
+  /*** EXTERNALLY CALLABLE HELPER FUNCTIONS - SETTERS ***/
   
   // Called (true) each time a story reads an author name in storyinfo.txt
   // If never called, we know there are no authors to sort by.
@@ -1796,64 +2002,6 @@ public class FicArchiveBuilder {
   // If this is never called, we know there are no tags to generate pages for.
   public static void setHasTags(boolean b) {
     archiveHasTags = b;
-  }
-  
-  // Prints the manual.
-  public static void printManual() {
-    System.out.println("\nCHIVEGEN ALPHA: FANFIC ARCHIVE BUILDER " + versionString);
-    System.out.println("\nBasic command structure:");
-    System.out.println("java FicArchiveBuilder -i INPUTPATH -o OUTPUTPATH [... other options ...]");
-    System.out.println("\nREQUIRED PARAMETERS");
-    System.out.println("-i, -input\t\tSpecify input folder.");
-  //  System.out.println("-t, -template\t\tSpecify template file or folder.");
-    System.out.println("-o, -output\t\tSpecify output folder.");
-  //  System.out.println("-mt, -max-title-length\tMaximum character length of preview text in page titles.");
-    System.out.println("\nGENERAL ARCHIVE FORMATTING OPTIONS");
-    System.out.println("-s, -site-name\t\tSpecify website name for use in page titles, etc.\n\t\t\tDefault is \"" + siteName + "\".");
-    System.out.println("-url, -site-path\tSpecify a site folder path for links, i.e. \"/name/\".\n\t\t\tDefaults to \"/\".");
-    System.out.println("-c, --casual-html\tEnable casual HTML for story input. (May be slow.)");
-    System.out.println("-tf, -title\t\tGive a title template for page titles. \n\t\t\tDefault is \"" + titleTemplate + "\".");
-    System.out.println("-ff, -footer\t\tGive a footer template for automatic footers. \n\t\t\tDefault is \"" + footerTemplate + "\".");
-    System.out.println("\nSTORY INFOBOX OPTIONS");
-    System.out.println("--skip-empty-fields\tDon't show placeholder data in story infoboxes.");
-    System.out.println("--show-auto-dates\tShow autofilled update and published dates instead of \n\t\t\t\"Undated\".");
-    System.out.println("--use-folder-dates\tDefault to the creation and last modified dates \n\t\t\tof story input folders for missing dates.");
-    System.out.println("-nl, --no-labels\tDon't add field labels in infoboxes.");
-    System.out.println("\nCHAPTER FORMATTING OPTIONS");
-    System.out.println("--show-chapter-numbers\tPreface chapter titles with \"Chapter 1: \", \n\t\t\t\"Chapter 2: \", etc.");
-    System.out.println("\nSTORY INDEX OPTIONS");
-    System.out.println("-sk, --skip-index\tDon't create any index pages.");
-    System.out.println("--skip-title-index\tDon't create an index page for stories by title.");
-    System.out.println("--skip-fandom-index\tDon't create index pages for fandoms.");
-    System.out.println("--skip-author-index\tDon't create index pages for authors.");
-    System.out.println("-st, --skip-tags\tDon't generate tag index pages or valid tag links.");
-    System.out.println("-ss, --skip-stats\tDon't bother calculating site stats for the homepage.");
-    System.out.println("-sc, --skip-css\t\tDon't copy CSS stylesheets from input folder.");
-    System.out.println("--skip-jump\t\tGenerate simple pagination, no jump pagination links.");
-    System.out.println("--ignore-leading-the\tIgnore a starting \"The\" when sorting by title,\n\t\t\tfandom, etc.");
-    System.out.println("\nOTHER OPTIONS");
-    System.out.println("-v, --verbose\t\tVerbose mode. Shows extra print statements.\n\t\t\t(WARNING! May show a LOT of text, depending on what I've\n\t\t\tremembered to comment out.)");
-    System.out.println("-b, --brief\t\tBrief mode. Show fewer print statements.");
-    System.out.println("\nOTHER COMMANDS");
-    System.out.println("--man, --help\t\tPrints the manual. (You probably know this one.)");
-    System.out.println("--about, --credits\tPrints the credits.");
-    System.out.println("--license\t\tPrints the license. (Not properly implemented yet.)");
-  //  System.out.println("-it, --ignore-tabs\tDon't bother indenting input text inside the main div.");
-    System.out.println("\nThere are no public docs at the moment, but when there are I'll link them.\n");
-  }
-  
-  // Prints the license.
-  // TODO: decide on a license, if any!
-  public static void printLicense() {
-    // LICENSE GOES HERE
-    System.out.println("\nThis program is not yet released.");
-    System.out.println("\nUntil then: \n\t1) THIS PROGRAM COMES WITH NO WARRANTY OF ANY KIND, and \n\t2) PLEASE DON'T BE STUPID ENOUGH TO USE THIS FOR ANYTHING OF VALUE.\n");
-  }
-  
-  // Prints the credits.
-  public static void printCredits() {
-    System.out.println("\nChiveGen " + versionString + " is a project created and developed by alignmentDev.");
-    System.out.println("\nIt is written in Java, using gedit as the code editor.\n");
   }
 
 }
