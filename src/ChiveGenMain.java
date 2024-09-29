@@ -250,7 +250,7 @@ public class ChiveGenMain {
     } else {
       // Check that our output folder is in a valid location
       File parent = output.getParentFile();
-      if (!parent.canWrite() || !output.canWrite()) {
+      if (!parent.canWrite()) {
         System.out.println("Error: cannot write to directory"
                            + parent.getPath());
         return false;
