@@ -1,5 +1,20 @@
 CHANGELOG
 
+2024 September 29
+  - Apparently the improved shell script and folder behavior actually broke
+    everything, somehow? (Wouldn't generate because it failed to recognize the
+    input directory, and also would fail because it couldn't edit a folder that
+    didn't exist yet.) These issues are now fixed.
+  - Apparently I got a little overzealous about moving templates to the
+    ContentTemplate format, which broke the option to set title/footer templates
+    from the config file or command line. This is also now fixed. Separate files
+    for title and footer templates are retired for now.
+  - Fics with a date published but no date updated will now use the publication
+    date for the date updated field by default (unless the archive is set to
+    skip empty fields.)
+  - Version string is now 0.2.14, and lives in ChiveGenmain instead of
+    FicArchiveBuilder.
+
 2024 September 28
   - Moved main control of program as well as non-archive configuration settings
     (e.g. verbosity) to a new class, ChiveGenMain, which can instead pass
