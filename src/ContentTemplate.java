@@ -11,13 +11,12 @@ import java.io.*;
 public class ContentTemplate {
   // Strings that make up the template
   private String[] templateStrings;
-  // Order in which content should be inserted. 
-  // TODO: eventually rename to contentIndices or something more appropriate
+  // Order in which content should be inserted.
   private int[] insertionPoints;
-  
+
   // For template scanning - matches {{ or }} only
   private static Pattern templateDelimiters = Pattern.compile("\\{\\{|\\}\\}");
-  
+
   // Old constructor. Deprecated. TODO check for use and replace.
   public ContentTemplate(ArrayList<String> strings, ArrayList<Integer> inserts) {
     templateStrings = strings.toArray(new String[0]);
@@ -28,7 +27,7 @@ public class ContentTemplate {
       insertionPoints[i] = inserts.get(i);
     }
   }
-  
+
   // Constructor. Reads a template string from the input file if possible, and
   // constructs the template from the string and keywords. If the file is not
   // valid (i.e. doesn't exist), uses the fallback string as the template
@@ -52,7 +51,7 @@ public class ContentTemplate {
   public ContentTemplate(String templateInput, String[] keywords) {
     this.parseTemplateString(templateInput, keywords);
   }
-  
+
   // Accepts a string and array of keyword strings, and parses and
   // sets up the internal contents of the template object using them.
   private void parseTemplateString(String templateInput, String[] keywords) {
@@ -120,7 +119,7 @@ public class ContentTemplate {
     if (FicArchiveBuilder.isVerbose()) {
       for (int i = 0; i < foundKeywords.length; i++) {
         if (foundKeywords[i] == false) {
-          System.out.println("Warning: keyword " + keywords[i] 
+          System.out.println("Warning: keyword " + keywords[i]
                              + " was not found in the file.");
         }
       }
@@ -135,17 +134,17 @@ public class ContentTemplate {
       insertionPoints[i] = inserts.get(i);
     }
   }
-  
+
   // Write the given array of Strings into this template, and return the
   // interleaved result.
   public String assemble(String[] contentToInsert) {
-    if (this.getTemplateStrings().length < 1) { 
+    if (this.getTemplateStrings().length < 1) {
       // don't bother for blank template
       return "";
     }
     StringBuilder content = new StringBuilder();
     // if there's nothing to insert, return the full text of the template
-    if (contentToInsert.length < 1) { 
+    if (contentToInsert.length < 1) {
       for (int i = 0; i < this.templateStrings.length; i++) {
         content.append(this.templateStrings[i]);
       }
@@ -170,12 +169,12 @@ public class ContentTemplate {
     }
     return content.toString();
   }
-  
+
   // Get the template strings
   public String[] getTemplateStrings() {
     return templateStrings;
   }
-  
+
   // Get the template strings all in one string
   public String toString() {
     StringBuilder builder = new StringBuilder();
@@ -184,7 +183,7 @@ public class ContentTemplate {
     }
     return builder.toString();
   }
-  
+
   // Get the array of indexes of content to be inserted.
   public int[] getInsertionPoints() {
     return insertionPoints;

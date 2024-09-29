@@ -15,7 +15,7 @@ public class GenUtils {
         }
         return set;
     }
-    
+
   // Accepts a single String array, and returns a HashMap of the Strings
   // mapped with their original indices in the array as values.
   public static HashMap<String, Integer> hashMapStringToIndex(String[] keys) {

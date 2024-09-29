@@ -1,6 +1,6 @@
 /***
   An enum for ratings.
-  Intended as a compromise between FFN and AO3's approach: 
+  Intended as a compromise between FFN and AO3's approach:
     UNRATED = No rating given
     G = AO3 G, FFN K
     PG = AO3 G/T, FFN K+

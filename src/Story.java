@@ -2,7 +2,7 @@
 
   A class to represent an individual story, with a folder, chapters and
   work metadata.
-  
+
 ***/
 
 import java.util.*;
@@ -39,18 +39,18 @@ public class Story {
   // End notes. Displayed after last chapter. Currently unused.
   private String storyEndNotes = "";
   // The published and last updated dates. Input file should use ISO format.
-  private LocalDate updated; 
+  private LocalDate updated;
   private LocalDate published;
   // Total story wordcount.
   // It is initially set to -1 because 0 could mean a story 0 words long.
-  private int wordcount = -1; 
+  private int wordcount = -1;
   // Completion status. Defaults to false (incomplete).
   private boolean isComplete = false;
   // Rating (enum). Initialized to no rating in case none is given.
   private Rating storyRating = Rating.UNRATED;
   // In case no storyinfo.txt file is found
   private boolean hasStoryDataFile = false;
-  // In case fields in storyinfo.txt are missing, incorrectly formatted 
+  // In case fields in storyinfo.txt are missing, incorrectly formatted
   // or otherwise can't be used
   private boolean hasDateUpdated = false;
   private boolean hasDatePublished = false;
@@ -94,12 +94,12 @@ public class Story {
       System.out.println("Chapter files found: " + Arrays.toString(chapters));
     }
     chapterTitles = new String[chapters.length];
-    // Check if table of contents file exists, and fill out toc with 
+    // Check if table of contents file exists, and fill out toc with
     // generic chapter names if it does not
     File tocFile = new File(inputFolder, "toc.txt");
     if (!tocFile.exists()) {
       if (FicArchiveBuilder.isVerbose()) {
-        System.out.println("toc.txt was not found for story " + inputFolder.getName() + 
+        System.out.println("toc.txt was not found for story " + inputFolder.getName() +
         ". Autofilling chapter titles...");
       }
       for (int i = 0; i < chapters.length; i++) {
@@ -130,7 +130,7 @@ public class Story {
     File storyDataFile = new File(inputFolder, "storyinfo.txt");
     if (storyDataFile.exists()) {
       //read config file
-      // for each line: use a hashset to check that the label is valid, 
+      // for each line: use a hashset to check that the label is valid,
       // then switch statement using 1st char and disambig from there
       hasStoryDataFile = true;
       try {
@@ -309,7 +309,7 @@ public class Story {
       wordcount = countWords();
     }
   }
-  
+
   // Parses fandom data
   public void parseAsFandom(String f) {
     fandoms = f.split(", ");
@@ -318,7 +318,7 @@ public class Story {
     }
     hasFandom = true;
   }
-  
+
   // Parses author data
   public void parseAsAuthor(String a) {
     authors = a.split(", ");
@@ -329,7 +329,7 @@ public class Story {
     // tell main we have at least 1 author
     FicArchiveBuilder.setHasAuthors(true);
   }
-  
+
   // Parse a string as a rating and return it
   public Rating parseAsRating(String r) {
     // Interpret the rating as a Rating enum value
@@ -352,7 +352,7 @@ public class Story {
     // if it's not any other rating, it's unrated
     return Rating.UNRATED;
   }
-  
+
   // Parse string as wordcount
   public int parseAsWordcount(String w, String wordcountFolderName) {
     w = w.replace(",", "").replace("\\s", ""); // strip whitespace and commas
@@ -360,12 +360,12 @@ public class Story {
       int wc = Integer.parseInt(w);
       return wc;
     } catch (IllegalArgumentException e) {
-      System.out.println("Error: wordcount for story in folder " + wordcountFolderName + 
+      System.out.println("Error: wordcount for story in folder " + wordcountFolderName +
       " was improperly formatted and could not be parsed. Wordcount will be counted automatically instead.");
       return -1;
     }
   }
-  
+
   // Parse a string as tags
   public void parseAsTags(String t) {
     // Read tags as a comma-separated list, and put them in the array and the hashset
@@ -377,7 +377,7 @@ public class Story {
     // tell ficarchivebuilder we have at least 1 tag
     FicArchiveBuilder.setHasTags(true);
   }
-  
+
   // Parse string as update date
   public void parseAsDateUpdated(String u) {
     try {
@@ -388,7 +388,7 @@ public class Story {
       hasDateUpdated = false;
     }
   }
-  
+
   public void parseAsDatePublished(String p) {
     try {
       published = LocalDate.parse(p.replaceAll("\\s", ""));
@@ -398,7 +398,7 @@ public class Story {
       hasDatePublished = false;
     }
   }
-  
+
   // Gets the date string. If defaultDate is true, the date was autofilled
   // from metadata or another default like 1970-01-01.
   public String getDateString(LocalDate date, boolean notDefaultDate) {
@@ -410,11 +410,11 @@ public class Story {
     }
     return "Undated";
   }
-  
+
   public String getDateString(LocalDate date) {
     return getDateString(date, true);
   }
-  
+
   // Gets dates from the file attributes, if no dates are given
   // Published and created should be potentially different dates, but this
   // doesn't seem to work currently. Might be a Linux-specific issue?
@@ -441,7 +441,7 @@ public class Story {
     }
   }
   ***/
-  
+
   // Reads through all chapter files to get a total story wordcount.
   public int countWords() {
     if (FicArchiveBuilder.isVerbose()) {
@@ -468,8 +468,8 @@ public class Story {
     }
     return totalWords;
   }
-  
-  // Calls buildChapter to get full chapter page strings, writes them to file, 
+
+  // Calls buildChapter to get full chapter page strings, writes them to file,
   // and creates a corresponding table of contents
   public void buildStory() {
     if (chapters.length < 1) {
@@ -477,7 +477,7 @@ public class Story {
     }
     if (FicArchiveBuilder.isVerbose()) {
       System.out.println("Writing story " + storyTitle + " to output folder...");
-    }  
+    }
     // Create the story output folder if it doesn't exist yet
     if (!storyOutputFolder.exists()) {
       storyOutputFolder.mkdirs();
@@ -493,32 +493,32 @@ public class Story {
       // with file path of storyOutputFolder + the name of the input file as .html
       FicArchiveBuilder.buildPage(this.buildChapter(i), new File(storyOutputFolder, chapters[i].getName().replace(".txt", ".html")));
       toc.append("<li><a href=\"" + chapters[i].getName().replace(".txt", ".html") + "\">" + chapterTitles[i] + "</a></li>\n");
-    }    
+    }
     toc.append("</ol>\n");
     // Build the table of contents
     if (FicArchiveBuilder.isVerbose()) {
       System.out.println("Building table of contents...");
-    }  
+    }
     // CREATE TABLE OF CONTENTS PAGE
-    FicArchiveBuilder.buildPage(FicArchiveBuilder.buildStandardPageString(toc.toString(), 
+    FicArchiveBuilder.buildPage(FicArchiveBuilder.buildStandardPageString(toc.toString(),
     FicArchiveBuilder.buildPageTitle("Table of Contents", storyTitle)), new File(storyOutputFolder, "toc.html"));
   }
-  
+
   // Build the story infoboxes
   public void buildInfoboxes() {
     if (chapters.length > 0) {
       storyInfo = buildStoryInfoBox();
       indexStoryInfo = buildIndexStoryInfoBox();
-    }  
+    }
   }
-  
+
   // Builds a string containing the content of the chapter, notes, infobox, etc.
   public String buildChapter(int chapterNumber) {
     if (FicArchiveBuilder.isVerbose()) {
       System.out.println("Creating string for chapter " + chapterNumber + "...");
     }
     // Read the entire chapter's file to the string chapterContent
-    if (FicArchiveBuilder.isVerbose()) { 
+    if (FicArchiveBuilder.isVerbose()) {
       System.out.println("Inserting chapter content into chapter template...");
     }
     // Get the full chapter string for writing into a page
@@ -529,39 +529,39 @@ public class Story {
       pageTitle = getFormattedChapterTitle(chapterNumber);
     }
     // Get the full string for the output webpage
-    return FicArchiveBuilder.buildStandardPageString(chapterString, 
+    return FicArchiveBuilder.buildStandardPageString(chapterString,
     FicArchiveBuilder.buildPageTitle(pageTitle, storyTitle));
   }
-    
+
   // Gets the prebuilt story info box for chapter pages.
   public String getStoryInfo() {
     return storyInfo;
-  }  
-  
+  }
+
   // Gets the prebuilt story infobox for index listings, complete with link.
   public String getInfoboxForIndex() {
     return indexStoryInfo;
-  }  
-  
+  }
+
   // Builds a string for the story infobox.
   public String buildStoryInfoBox() {
     // Create infobox from template
     //return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getInfoBoxTemplate(), createInfoBoxContentArray(false));
     return FicArchiveBuilder.getInfoBoxTemplate().assemble(createInfoBoxContentArray(false));
   }
-  
+
   // Builds a string for the index version of the story infobox.
   public String buildIndexStoryInfoBox() {
     // Create infobox from template
     //return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getIndexInfoBoxTemplate(), createInfoBoxContentArray(true));
     return FicArchiveBuilder.getIndexInfoBoxTemplate().assemble(createInfoBoxContentArray(true));
   }
-  
+
   // Gets the local URL of any arbitrary chapter.
   public String getChapterURL(int chapterNumber) {
     return chapters[chapterNumber].getName().replace(".txt", ".html");
   }
-  
+
   // Creates HashMap of fields and content for a story infobox.
   public String[] createInfoBoxContentArray(boolean hasLink) {
     // Get the URL for linking to this story
@@ -578,27 +578,27 @@ public class Story {
     // Fields: title (link), fandom, wordcount, chapter #, published, updated, summary, completion status, author, tags, rating
     //String[] storyPageData;
     if (FicArchiveBuilder.generateInfoBoxTemplateFields()) {
-      return new String[] {titleLink, buildField(FicArchiveBuilder.getFandomLabel(), getSkippableFandom()), 
-      buildField(FicArchiveBuilder.getWordcountLabel(), HtmlUtils.numberWithCommas(wordcount)), 
-      buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)), 
+      return new String[] {titleLink, buildField(FicArchiveBuilder.getFandomLabel(), getSkippableFandom()),
+      buildField(FicArchiveBuilder.getWordcountLabel(), HtmlUtils.numberWithCommas(wordcount)),
+      buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)),
       buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)),
-      buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)), 
-      buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary), 
-      buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()), 
+      buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)),
+      buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary),
+      buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()),
       buildField(FicArchiveBuilder.getByLineTemplate(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
       buildField(FicArchiveBuilder.getTagsLabel(), getFormattedTags()),
       buildField(FicArchiveBuilder.getRatingLabel(), FicArchiveBuilder.getRatingString(storyRating))};
     }
-    return new String[] {titleLink, getSkippableFandom(), 
-                         Integer.toString(wordcount), 
+    return new String[] {titleLink, getSkippableFandom(),
+                         Integer.toString(wordcount),
                          Integer.toString(chapters.length),
-                         getDateString(published, hasDatePublished), 
-                         getDateString(updated, hasDateUpdated), summary, 
-                         getSkippableCompletionStatus(), getSkippableAuthor(), 
-                         getFormattedTags(), 
+                         getDateString(published, hasDatePublished),
+                         getDateString(updated, hasDateUpdated), summary,
+                         getSkippableCompletionStatus(), getSkippableAuthor(),
+                         getFormattedTags(),
                          FicArchiveBuilder.getRatingString(storyRating)};
   }
-  
+
   // Creates content arrays for chapter pages
   public String[] createChapterContentArray(int chapterNumber) {
     // Fields: infobox, chapter title, chapter body, pagination (top and bottom)
@@ -618,7 +618,7 @@ public class Story {
     FileToStringUtils.readFileToString(chapters[chapterNumber], FicArchiveBuilder.useCasualHTML()), "",
     getFormattedEndNotes(chapterNumber), getChapterPagination(chapterNumber)};
   }
-  
+
   // Gets story notes, but only for the first chapter
   public String getFormattedStoryNotes(int n) {
     if (n == 0) {
@@ -629,24 +629,24 @@ public class Story {
     }
     return "";
   }
-  
+
   // Gets story end notes, but only for the last chapter
   public String getFormattedEndNotes(int n) {
     if (n == chapters.length - 1) {
       //return FicArchiveBuilder.getSummaryContentTemplate().assemble(new String[]
       //  {FicArchiveBuilder.getEndNotesLabel(), storyEndNotes});
-      return buildField(FicArchiveBuilder.getSummaryTemplate(), 
+      return buildField(FicArchiveBuilder.getSummaryTemplate(),
                         FicArchiveBuilder.getEndNotesLabel(), storyEndNotes);
     }
     return "";
   }
-  
+
   // Get the formatted chapter title
   public String getFormattedChapterTitle(int chapterNumber) {
     return FicArchiveBuilder.getChapterTitleTemplate().replace("{{C}}",
     chapterTitles[chapterNumber]).replace("{{L}}", Integer.toString(chapterNumber + 1));
-  }  
-  
+  }
+
   // Gets the pagination links for a given chapter.
   public String getChapterPagination(int chapterNumber) {
     if (chapters.length == 1) { // don't bother with paginating oneshots
@@ -654,7 +654,7 @@ public class Story {
     }
     String previous = "";
     String next = "";
-    // If previous/next chapters exist, have the {Previous} and {Next} be replaced with links. 
+    // If previous/next chapters exist, have the {Previous} and {Next} be replaced with links.
     // Otherwise, replace them with a blank string.
     if (chapterNumber > 0) {
       previous = "<a href=\"" + getChapterURL(chapterNumber-1) + "\">" + FicArchiveBuilder.getPrevChapterLabel() + "</a>";
@@ -665,8 +665,8 @@ public class Story {
     //return FicArchiveBuilder.writeIntoTemplate(FicArchiveBuilder.getChapterPaginationContentTemplate(), new String[] {previous, next});
     return FicArchiveBuilder.getChapterPaginationContentTemplate().assemble(new String[] {previous, next});
   }
-  
-  
+
+
   // Use replace() to quickly insert data into certain short templated fields
   // This uses the replace() method, because it's currently simpler for a short
   // template
@@ -680,7 +680,7 @@ public class Story {
     }
     return content; // if content is blank, don't create a formatted field
   }
-  
+
   // Builds a field using the generic fieldContentTemplate template.
   public String buildField(String label, String content) {
     if (content.equals("")) {
@@ -693,7 +693,7 @@ public class Story {
     return FicArchiveBuilder.getFieldContentTemplate().assemble(new String[] {label, content});
 
   }
-  
+
   // For fields like author, summary, etc that use other templates
   public String buildField(ContentTemplate field, String label, String content) {
     if (content.equals("")) {
@@ -706,20 +706,20 @@ public class Story {
     return field.assemble(new String[] {label, content});
   }
 
-  
+
   public String getFormattedTags() {
     return buildFormattedArrayField(storyTags, "tags", FicArchiveBuilder.skipTagPages());
   }
-  
-  // Build a formatted tagset-style string for fields with multiple contents 
+
+  // Build a formatted tagset-style string for fields with multiple contents
   // like authors/fandoms/tags
   public String buildFormattedArrayField(String[] arrayField, String URLCategory, boolean skipCategoryPages) {
     StringBuilder field = new StringBuilder();
     String linkURL = "#";
     for (int i = 0; i < arrayField.length; i++) {
       if (!skipCategoryPages) {
-        linkURL = FicArchiveBuilder.getSitePath() + URLCategory + "/" + 
-        HtmlUtils.toSafeUrl(arrayField[i].toLowerCase()) + 
+        linkURL = FicArchiveBuilder.getSitePath() + URLCategory + "/" +
+        HtmlUtils.toSafeUrl(arrayField[i].toLowerCase()) +
         FicArchiveBuilder.getPaginationDivider() + "1.html";
       }
       field.append(buildField(FicArchiveBuilder.getTagTemplate(), arrayField[i], linkURL));
@@ -733,82 +733,82 @@ public class Story {
     }
     return field.toString();
   }
-  
+
   // Gets the tags array
   public String[] getStoryTags() {
     return storyTags;
   }
-  
+
   // Sets the tags array
   public void setStoryTags(String[] newTags) {
     storyTags = newTags;
   }
-  
+
   // Gets the tagset
   public HashSet<String> getTagSet() {
     return storyTagSet;
   }
-  
+
   // Gets the story title.
   public String getStoryTitle() {
     return storyTitle;
   }
-  
+
   // Sets the story title
   public void setStoryTitle(String newTitle) {
     storyTitle = newTitle;
   }
-  
+
   // Gets the fandoms.
   public String[] getFandoms() {
     return fandoms;
   }
-  
+
   // Sets the fandoms
   public void setFandoms (String[] newFandoms) {
     fandoms = newFandoms;
   }
-  
+
   // Gets the fandom hashset.
   public HashSet<String> getFandomHashSet() {
     return fandomHashSet;
   }
-  
+
   // Gets the authors.
   public String[] getAuthors() {
     return authors;
   }
-  
+
   // Sets the author.
   public void setAuthors(String[] newAuthors) {
     authors = newAuthors;
   }
-  
+
   // Gets the author hashset.
   public HashSet<String> getAuthorHashSet() {
     return authorHashSet;
   }
-  
+
   // Gets the date updated, or failing that, the date published.
   public LocalDate getDateUpdated() {
     return updated;
   }
-  
+
   // Gets the wordcount.
   public int getWordCount() {
     return wordcount;
   }
-  
+
   // Gets chapter count
   public int getChapterCount() {
     return chapters.length;
   }
-  
+
   // Gets the rating enum
   public Rating getRating() {
     return storyRating;
   }
-  
+
   // Basic toString() method.
   public String toString() {
     if (storyTitle.equals("")) {
@@ -816,8 +816,8 @@ public class Story {
     }
     return storyTitle;
   }
-  
-  // Gets either the formatted list of fandoms, or (if none was given and we're 
+
+  // Gets either the formatted list of fandoms, or (if none was given and we're
   // skipping blank fields) a blank string.
   private String getSkippableFandom() {
     if (!hasFandom && FicArchiveBuilder.skipEmptyFields()) {
@@ -825,7 +825,7 @@ public class Story {
     }
     return buildFormattedArrayField(fandoms, "fandoms", FicArchiveBuilder.skipFandomIndex());
   }
-  
+
   // Same as getSkippableFandom(), but for the author field.
   private String getSkippableAuthor() {
     if (!hasAuthor && FicArchiveBuilder.skipEmptyFields()) {
@@ -833,7 +833,7 @@ public class Story {
     }
     return buildFormattedArrayField(authors, "authors", FicArchiveBuilder.skipAuthorIndex());
   }
-  
+
   // Same as getSkippableFandom(), but with completion status field.
   private String getSkippableCompletionStatus() {
     if (!hasCompletionStatus && FicArchiveBuilder.skipEmptyFields()) {
@@ -842,10 +842,10 @@ public class Story {
     // Get completion statuses from FicArchiveBuilder's settings
     return FicArchiveBuilder.getCompletionStatusString(isComplete);
   }
-  
+
   // For printing a warning when a date in storyinfo.txt is invalid.
   public void printInvalidDateWarning(String dateField) {
-    System.out.println("Warning: invalid date " + dateField + " for story '" + 
+    System.out.println("Warning: invalid date " + dateField + " for story '" +
     storyTitle + "' (date input must be in ISO format (YYYY-MM-DD).)");
     System.out.print("Default fallback (" );
     if (FicArchiveBuilder.defaultToEpochDate()) {

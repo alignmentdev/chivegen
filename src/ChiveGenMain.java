@@ -3,7 +3,7 @@
   ChiveGen - a static fanfiction archive generator.
   Accepts an input directory and output directory, and builds an archive from
   the input files to the output directory.
-  
+
   Usage: chivegen -i INPUT_DIR -o OUTPUT_DIR [additional options]
  	or,  java ChiveGenMain -i INPUT_DIR -o OUTPUT_DIR [additional options]
 
@@ -20,7 +20,7 @@ public class ChiveGenMain {
 
   // Version string for manual and about text
   public final static String versionString = "v0.2.14";
-  
+
   // GLOBAL FOLDER/DIRECTORY VARIABLES
   // Files for input folder, template and output folder
   private static File templateFile;
@@ -31,14 +31,14 @@ public class ChiveGenMain {
   private static String inputPath = "";
   private static String templatePath = "";
   private static String outputPath = "";
-  
+
   /***
   // Show extra print statements for various functions
   private static boolean verbose = false;
   // Skip some print statements that print by default
   private static boolean brief = false;
   ***/
-  
+
   // VERBOSITY
   // Constants for quickly checking against various verbosity levels
   public final static int SILENT = Verbosity.SILENT.ordinal();
@@ -46,15 +46,15 @@ public class ChiveGenMain {
   public final static int NORMAL = Verbosity.NORMAL.ordinal();
   public final static int VERBOSE = Verbosity.VERBOSE.ordinal();
   public final static int DEBUG = Verbosity.DEBUG.ordinal();
-  
+
   private static Verbosity verbosity = Verbosity.NORMAL;
-  
+
   // OTHER SETTINGS FOR GENERAL RUNNING BEHAVIOR
-  
+
   // Decides if a config file should be read. True by default, can be turned off
   // by command arguments.
   private static boolean useConfigFile = true;
-  
+
   // Moved here temporarily to keep compiler happy.
   // Regex template for page titles.
   private static String titleTemplate = "{T} - {S}";
@@ -62,7 +62,7 @@ public class ChiveGenMain {
   private static String footerTemplate = "{{SiteName}} | Powered by ChiveGen "
                                          + versionString;
   private static String siteName = "Archive";
-  
+
   // Main method
   public static void main(String[] args) {
     // Track time it takes for the program to run
@@ -90,11 +90,11 @@ public class ChiveGenMain {
       // Print our options
       printStatus("Additional args: " + options.toString(), Verbosity.NORMAL);
     }
-    
+
     // Create FicArchiveBuilder, pass it the folder arguments, and tell it to
     // read in the config and any additional command line arguments.
     FicArchiveBuilder archiveBuilder = new FicArchiveBuilder();
-    archiveBuilder.setFilePaths(input, output, templateFile);    
+    archiveBuilder.setFilePaths(input, output, templateFile);
     // Pass additional arguments AFTER any config file has been read and parsed.
     if (useConfigFile) {
       archiveBuilder.readConfig();
@@ -107,10 +107,10 @@ public class ChiveGenMain {
     // Set verbosity - stopgap measure until verbosity overhaul is properly
     // implemented.
     archiveBuilder.setVerbosity(verbosity);
-    
-    // Build the archive.    
+
+    // Build the archive.
     long storyTime = FicArchiveBuilder.build();
-    
+
     // Report how long it took to build the site, if it was built.
     long finalTime = System.currentTimeMillis() - startTime;
     if (ready) {
@@ -119,15 +119,15 @@ public class ChiveGenMain {
              Verbosity.VERBOSE);
     }
   }
-  
-  
+
+
   /*** INTERNAL HELPER FUNCTIONS ***/
-  
+
   // Parses the directory input and output arguments, as well as a general page
   // template path if one is given, and global parameters such as verbosity
   // (--brief, --verbose, etc) and --no-config.
   // Returns true if the given set of directory arguments is valid for running
-  // the program, or false otherwise. 
+  // the program, or false otherwise.
   // Returns the list of additional arguments via the opts ArrayList.
   public static boolean parseFolderArgs(String[] args, ArrayList<String> opts) {
     // Print a warning if there are no arguments given
@@ -135,7 +135,7 @@ public class ChiveGenMain {
       printUsage();
       System.out.println("(Try '--man' or '--help' if you need the manual.)\n");
       return false;
-    }  
+    }
     // Loop through the arguments and parse the folder-related ones, storing the
     // others in our ArrayList opt for later use.
     for (int i = 0; i < args.length; i++) {
@@ -144,17 +144,17 @@ public class ChiveGenMain {
           // If this is the last argument, report an error and return false
           printMissingArgError(args[i], "input directory");
           return false;
-        } else { 
+        } else {
           // Otherwise, take the next argument as input, and skip ahead one
           inputPath = args[i+1];
           i++;
         }
       } else if (args[i].equals("-o") || args[i].equals("-output")) {
-        if (i == args.length - 1) { 
-          // Again, if this is last, it's an error     
+        if (i == args.length - 1) {
+          // Again, if this is last, it's an error
           printMissingArgError(args[i], "output directory");
           return false;
-        } else {  
+        } else {
           // Get the output path from the next argument, and skip ahead
           outputPath = args[i+1];
           i++;
@@ -178,11 +178,11 @@ public class ChiveGenMain {
       } else if (args[i].equals("--credits") || args[i].equals("--about")) {
         printCredits();
         return false;
-      } else if (args[i].equals("-d") || args[i].equals("--debug")) { 
+      } else if (args[i].equals("-d") || args[i].equals("--debug")) {
         verbosity = Verbosity.DEBUG;
-      } else if (args[i].equals("-b") || args[i].equals("--brief")) { 
+      } else if (args[i].equals("-b") || args[i].equals("--brief")) {
         verbosity = Verbosity.BRIEF;
-      } else if (args[i].equals("-v") || args[i].equals("--verbose")) { 
+      } else if (args[i].equals("-v") || args[i].equals("--verbose")) {
         verbosity = Verbosity.VERBOSE;
       } else if (args[i].equals("-s") || args[i].equals("--silent")) {
         verbosity = Verbosity.SILENT;
@@ -241,26 +241,23 @@ public class ChiveGenMain {
     }
     // Check the output path is valid and doesn't have anything already there
     output = new File(outputPath);
-    
+
     if (output.exists() && verbosity.ordinal() >= BRIEF) {
       /***
       System.out.println("Warning: output folder " + outputPath + " already "
                          + "exists, and will be overwritten.");
-      // TODO: Maybe a yes-no prompt here would be good?
       ***/
     } else {
       // Check that our output folder is in a valid location
       File parent = output.getParentFile();
-      if (!parent.exists()) {
-        parent.mkdirs();  // Create any necessary parent folders
-      } else if (!parent.canWrite()) {
-        System.out.println("Error: cannot write to directory" 
+      if (!parent.canWrite() || !output.canWrite()) {
+        System.out.println("Error: cannot write to directory"
                            + parent.getPath());
-        return false;        
+        return false;
       }
     }
     // If we got through all that...
-    
+
     return true;
   }
 
@@ -286,7 +283,7 @@ public class ChiveGenMain {
     System.out.println("-o, -output\t\tSpecify output folder.");
     System.out.println("\nGENERAL ARCHIVE FORMATTING OPTIONS");
     System.out.println("-s, -site-name\t\tSpecify website name for use in "
-               + "page titles, etc.\n\t\t\tDefault is \"" 
+               + "page titles, etc.\n\t\t\tDefault is \""
                + siteName + "\".");
     System.out.println("-url, -site-path\tSpecify a site folder path for "
                + "links, i.e. \"/name/\".\n\t\t\tDefaults to "
@@ -294,10 +291,10 @@ public class ChiveGenMain {
     System.out.println("-c, --casual-html\tEnable casual HTML for story "
                + "input. (May be slow.)");
     System.out.println("-tf, -title\t\tGive a title template for page "
-               + "titles. \n\t\t\tDefault is \"" + titleTemplate 
+               + "titles. \n\t\t\tDefault is \"" + titleTemplate
                + "\".");
     System.out.println("-ff, -footer\t\tGive a footer template for "
-               + "automatic footers. \n\t\t\tDefault is \"" 
+               + "automatic footers. \n\t\t\tDefault is \""
                + footerTemplate + "\".");
     System.out.println("\nSTORY INFOBOX OPTIONS");
     System.out.println("--skip-empty-fields\tDon't show placeholder data in"
@@ -346,19 +343,19 @@ public class ChiveGenMain {
     System.out.println("\nThere are no public docs at the moment, but when "
                + "there are I'll link them.\n");
   }
-  
+
   // Prints the license.
   // TODO: decide on a license, if any!
   private static void printLicense() {
     // LICENSE GOES HERE
     System.out.println("\nThis program is not yet released.");
     System.out.println("\nUntil then:");
-    System.out.println("\t1) THIS PROGRAM COMES WITH NO WARRANTY OF ANY"
-               + " KIND, and ");
+    System.out.println("\t1) THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANTY OF "
+               + "ANY KIND, and ");
     System.out.println("\t2) PLEASE DON'T BE STUPID ENOUGH TO USE THIS FOR"
                + " ANYTHING OF VALUE.\n");
   }
-  
+
   // Prints the credits.
   private static void printCredits() {
     System.out.println("\nChiveGen " + versionString + " is a project "
@@ -370,13 +367,6 @@ public class ChiveGenMain {
 
   /*** OTHER EXTERNALLY CALLABLE FUNCTIONS ***/
 
-  // Get verbosity setting. DEPRECATED, will be removed.
-  /***
-  public static boolean isVerbose() {
-    return (verbosity >= VERBOSE);
-  }
-  ***/
-  
   // Prints a given string with println, but ONLY if the provided Verbosity
   // value is less than or equal to the current verbosity level.
   // Returns true if output would have been printed, or false otherwise.
@@ -387,19 +377,19 @@ public class ChiveGenMain {
     }
     return false;
   }
-  
+
   public static int verbosityInt() {
     return verbosity.ordinal();
   }
-  
+
   public static String getVersionString() {
     return versionString;
   }
-  
+
   // Prints an error message to indicate a missing necessary argument.
   public static void printMissingArgError(String arg, String content) {
     System.out.println("Error: argument " + arg + " was given, but no "
-                       + content + "  was supplied.");  
+                       + content + "  was supplied.");
   }
 
 }

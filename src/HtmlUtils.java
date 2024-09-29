@@ -12,18 +12,18 @@ import java.io.*;
 public class HtmlUtils {
 
   // Our collection of recognized non-paragraph HTML tag openings.
-  // In order: line break, horizontal line, heading, end of a tag, div, image, 
-  // list item, unordered list, ordered list, iframe, blockquote, table, 
+  // In order: line break, horizontal line, heading, end of a tag, div, image,
+  // list item, unordered list, ordered list, iframe, blockquote, table,
   // table row, table data, table heading.
   // <no></no> can be used to tell ChiveGen to ignore a line for formatting
   // regardless of what else it starts with
-  private static String[] acceptedOpeningHTMLTags = new String[] {"<br", 
+  private static String[] acceptedOpeningHTMLTags = new String[] {"<br",
   "<hr", "<h", "</", "<di", "<im", "<li", "<ul", "<ol",
   "<if", "<bl", "<ta", "<tr", "<td", "<th", "<no"};
   // To reduce magic numbers
   private static final int LONGEST_OPENING_TAG_LENGTH = 3;
   private static final int SHORTEST_OPENING_TAG_LENGTH = 2;
-  
+
   // Contains all recognized non-paragraph HTML opening tag starts
   private static HashSet<String> nonParagraphHTMLTags =
     new HashSet<String>(Arrays.asList(acceptedOpeningHTMLTags));
@@ -81,12 +81,12 @@ public class HtmlUtils {
     lineReader.close();
     return formatted.toString();
   }
-  
+
   // Returns whether or not the given string ends with "</p>".
   private static boolean paragraphEnds(String s) {
     return s.length() > 3 && s.substring(s.length() - 4).equals("</p>");
   }
-  
+
   // Returns true if the string starts with a recognized non-paragraph HTML
   // opening tag.
   private static boolean detectNonParagraphHtmlTags(String s) {
@@ -98,7 +98,7 @@ public class HtmlUtils {
     String comparisonSubstring = s.trim();
     if (comparisonSubstring.charAt(0) == '<') {
       // Only check for HTML tags if we clearly start with one
-      if (comparisonSubstring.length() > LONGEST_OPENING_TAG_LENGTH) { 
+      if (comparisonSubstring.length() > LONGEST_OPENING_TAG_LENGTH) {
         // only get the substring if it's longer than our max tag length
         comparisonSubstring = comparisonSubstring.substring(0, LONGEST_OPENING_TAG_LENGTH);
       }
@@ -116,7 +116,7 @@ public class HtmlUtils {
     }
     return false;
   }
-  
+
   // Formats the wordcount as a String with commas (i.e. 1,234,567)
   public static String numberWithCommas(int n) {
     StringBuilder numberWithCommas = new StringBuilder();
@@ -140,7 +140,7 @@ public class HtmlUtils {
     }
     return numberWithCommas.toString();
   }
-  
+
   // Takes a string and converts it to Title Case
   public static String toTitleCase(String text) {
     if (text.equals("")) {
@@ -156,7 +156,7 @@ public class HtmlUtils {
       if (atStartOfWord) {
         if ((c > 96 && c < 123)) {
           c = (char)(c - 32);
-        }        
+        }
         atStartOfWord = false;
       }
       titleBuilder.append(c);
@@ -166,7 +166,7 @@ public class HtmlUtils {
     }
     return titleBuilder.toString();
   }
-  
+
   // Converts potentially unsafe input strings (like story tags) into strings
   // that are safe for URLs. Unsafe characters are replaced with "_##" where
   // "##" is the numerical value of the character. ('_' is also escaped so
@@ -184,7 +184,7 @@ public class HtmlUtils {
         url.append('-');
       }
       // 45 = '-', 95 = '_', 48-57 = digits 0-9, 65-90 = A-Z, 97-122 = a-z
-      else if (!((c > 96 && c < 123) || (c > 64 && c < 91) 
+      else if (!((c > 96 && c < 123) || (c > 64 && c < 91)
            || (c > 47 && c < 58))) {
         url.append("_" + c);
       }
@@ -194,7 +194,7 @@ public class HtmlUtils {
     }
     return url.toString();
   }
-  
+
   // Removes a leading "the" (and forces all lowercase) for comparison
   public static String stripLeadingThe(String s) {
     s = s.toLowerCase();
@@ -203,7 +203,7 @@ public class HtmlUtils {
     }
     return s;
   }
-  
+
   // Counts and returns how many tabs a string begins with.
   // DEPRECATED, as nothing seems to use this.
   public static int countLeftTabs(String text) {
@@ -212,7 +212,7 @@ public class HtmlUtils {
     }
     char s = text.charAt(0);
     int tabs = 0;
-    while (s == '\t') { 
+    while (s == '\t') {
       tabs++;
       s = text.charAt(tabs);
     }
