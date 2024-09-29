@@ -199,9 +199,6 @@ public class FicArchiveBuilder {
   private static String tagTemplate =
     "<div class=tag><a href=\"{{C}}\">{{L}}</a></div>";
   private static String chapterTitleTemplate = "Chapter {{L}}: {{C}}";
-  // unused, deprecated
-  /***private static String tagLastTemplate =
-    "<div class=\"tag last\"><a href=\"{{C}}\">{{L}}</a></div>";***/
 
   /***
     Scanner patterns for template and file reading.
@@ -294,110 +291,6 @@ public class FicArchiveBuilder {
   private static boolean archiveHasAuthors = false; // true only if at least one story has an author in the metadata
   private static boolean archiveHasTags = false; // true only if at least one story has tags
 
-  // Main function - NOW DEPRECATED. To be removed once deemed safe to do so.
-  /***
-  public static void main(String[] args) {
-    long startTime = System.currentTimeMillis(); // Track time it takes for the program to run
-    // Parse just the initial folder arguments
-    parseFolderArgs(args);
-    // For debug purposes
-    if (verbose) {
-      System.out.println("[DEBUG] INVOKED WITH ARGS: ");
-      for (int i = 0; i < args.length; i++) {
-        System.out.println(args[i]);
-      }
-    }
-    // Decide if we can build with this input.
-    if (!building) {
-      readyToBuild = false;
-    }
-    else if (building && (inputPath.equals("") || outputPath.equals(""))) {
-      readyToBuild = false;
-      if (args.length == 0) {
-        System.out.println("Need some help? Try 'FicArchiveBuilder --man' for the manual.");
-      }
-      else if (!inputPath.equals("")) { // if we have an input path but not output
-        System.out.println("You need to specify an output folder first.");
-      }
-      else if (!outputPath.equals("")) { // vice versa
-        System.out.println("You need to specify an input folder first.");
-      }
-      else if (args[0].startsWith("-")) { // if we have neither, or args are out of order
-        System.out.println("You need to specify input and output folders first.");
-      }
-      else {
-        System.out.println("That doesn't seem to be a valid command. Try 'FicArchiveBuilder --man' to check out the manual.");
-      }
-    }
-    // If no template is included in arguments, look for template.html in the input path
-    else if (templatePath.equals("")) {
-      File defaultTemplate = new File(inputPath, "template.html");
-      if (defaultTemplate.exists()) {
-        templatePath = defaultTemplate.getPath();
-      }
-      else {
-        System.out.println("Error: couldn't find template.html in folder '" + inputPath + "'.");
-        System.out.println("(Make sure it's in the root of your input directory, and the filename is all lowercase!)");
-        readyToBuild = false;
-      }
-    }
-    else if (!templatePath.endsWith(".html")) {
-      readyToBuild = false;
-      System.out.println("Error: template files must be .html files.");
-    }
-    if (readyToBuild) {
-      // Create the input, output, and template files and check their validity
-      // before proceeding to anything else
-      templateFile = new File(templatePath);
-      input = new File(inputPath);
-      output = new File(outputPath);
-      if (!input.exists()) {
-        readyToBuild = false;
-        System.out.println("Error: input folder does not exist.");
-      }
-      else if (input.isFile()) {
-        readyToBuild = false;
-        System.out.println("Error: input folder is actually a file.");
-      }
-      if (output.isFile()) {
-        readyToBuild = false;
-        System.out.println("Error: output folder is actually a file.");
-      }
-      if (!templateFile.exists()) {
-        readyToBuild = false;
-        System.out.println("Error: template file does not exist.");
-      }
-      if (templateFile.isDirectory()) {
-        readyToBuild = false;
-        System.out.println("Error: template file is actually a directory.");
-      }
-    }
-    // If we have decided input and template are valid, parse our remaining
-    // arguments and build the archive.
-    if (readyToBuild) {
-      //validConfigSettingSet = GenUtils.hashSetFromArray(validConfigSettingNames);
-      // Read the config file, if it exists.
-      readConfig();
-      // Parse the other arguments, AFTER config has been taken into account.
-      parseArgs(args);
-      // Set some relevant defaults
-      if (skipWorkIndices) {
-        skipFandomIndex = skipTitleIndex = skipAuthorIndex = true;
-      }
-      // Check in the input folder for any custom labels to set
-      getCustomLabels();
-      // Builds the standard content templates
-      buildTemplates();
-      // Build the archive, and record how long story generation took.
-      long storyTime = build();
-      // Report how long it took to build the site, if it was built.
-      long finalTime = System.currentTimeMillis() - startTime;
-      System.out.println("Time taken: " + finalTime + " ms.");
-      System.out.println("Time for story generation: "
-                          + storyTime + " ms.");
-    }
-  }
-  ***/
 
   /*** PRE-BUILD CONFIGURATION FUNCTIONS ***/
 
