@@ -402,11 +402,15 @@ public class Story {
   // Gets the date string. If defaultDate is true, the date was autofilled
   // from metadata or another default like 1970-01-01.
   public String getDateString(LocalDate date, boolean notDefaultDate) {
-    if (notDefaultDate || ((FicArchiveBuilder.showDefaultDates() && !FicArchiveBuilder.skipEmptyFields()))) {
+    if (notDefaultDate || ((FicArchiveBuilder.showDefaultDates() &&
+                           !FicArchiveBuilder.skipEmptyFields()))) {
       return date.toString();
     }
     if (FicArchiveBuilder.skipEmptyFields()) {
       return "";
+    }
+    if (hasDatePublished) {
+      return date.toString();
     }
     return "Undated";
   }
@@ -582,7 +586,7 @@ public class Story {
       buildField(FicArchiveBuilder.getWordcountLabel(), HtmlUtils.numberWithCommas(wordcount)),
       buildField(FicArchiveBuilder.getChapterCountLabel(), Integer.toString(chapters.length)),
       buildField(FicArchiveBuilder.getDatePublishedLabel(), getDateString(published, hasDatePublished)),
-      buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(updated, hasDateUpdated)),
+      buildField(FicArchiveBuilder.getDateUpdatedLabel(), getDateString(getDateUpdated(), hasDateUpdated)),
       buildField(FicArchiveBuilder.getSummaryTemplate(), FicArchiveBuilder.getSummaryLabel(), summary),
       buildField(FicArchiveBuilder.getCompletionLabel(), getSkippableCompletionStatus()),
       buildField(FicArchiveBuilder.getByLineTemplate(), FicArchiveBuilder.getAuthorLabel(), getSkippableAuthor()),
@@ -723,13 +727,6 @@ public class Story {
         FicArchiveBuilder.getPaginationDivider() + "1.html";
       }
       field.append(buildField(FicArchiveBuilder.getTagTemplate(), arrayField[i], linkURL));
-      /*** // DEPRECATED SINCE CSS LAST-CHILD DOES THIS AUTOMATICALLY
-      if (i < arrayField.length - 1) {
-      }
-      else { // since we don't use this much, it's fine to leave as regex for now
-        field.append(FicArchiveBuilder.getTagLastTemplate().replace("{{C}}", linkURL).replace("{{L}}", arrayField[arrayField.length - 1]));
-      }
-      ***/
     }
     return field.toString();
   }
@@ -791,7 +788,11 @@ public class Story {
 
   // Gets the date updated, or failing that, the date published.
   public LocalDate getDateUpdated() {
-    return updated;
+    if (hasDateUpdated) {
+      return updated;
+    } else {
+      return published;
+    }
   }
 
   // Gets the wordcount.

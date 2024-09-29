@@ -14,10 +14,6 @@ import java.time.format.*;
 import java.lang.Math;
 
 public class FicArchiveBuilder {
-  // Version string for manual and about text
-  // (DEPRECATED - This has been/will be moved to the new main class)
-  private static String versionString = "v0.2.12";
-
   /***
     For input and output folders.
   ***/
@@ -157,7 +153,7 @@ public class FicArchiveBuilder {
   private static String titleBase; // the version with the site name in it
   // Regex template for footers.
   private static String footerTemplate = "{{SiteName}} | Powered by ChiveGen "
-                                         + versionString;
+                                         + ChiveGenMain.versionString;
   // Built with buildPageFooter()
   private static String standardFooter;
   // What we should prefix links with when linking from
@@ -550,10 +546,6 @@ public class FicArchiveBuilder {
     // Generate the content templates from the various input files.
     System.out.println("Building content templates...");
     pageTemplate = getTemplateFromFile(templateFile, pageTemplate);
-    titleTemplate = getTemplateFromFile(new File(input, "pagetitle.txt"),
-                                        titleTemplate);
-    footerTemplate = getTemplateFromFile(new File(input, "footer.txt"),
-                                        footerTemplate);
     chapterTitleTemplate =
       getTemplateFromFile(new File(input, "chaptertitles.txt"),
                           chapterTitleTemplate);
@@ -1229,7 +1221,7 @@ public class FicArchiveBuilder {
                             HtmlUtils.numberWithCommas(getTotalWordcount(stories)),
                             HtmlUtils.numberWithCommas(getTotalFandoms(stories)),
                             HtmlUtils.numberWithCommas(getTotalAuthors(stories)),
-                            versionString};
+                            ChiveGenMain.versionString};
             // Insert the stats into the homepage text body
             homePageContent = homePageTemplate.assemble(stats);
           }
@@ -1357,7 +1349,7 @@ public class FicArchiveBuilder {
 
   // Footer can have site name and version number
   public static String buildPageFooter() {
-    return footerTemplate.replace("{{SiteName}}", siteName).replace("{{VersionNumber}}", versionString);
+    return footerTemplate.replace("{{SiteName}}", siteName).replace("{{VersionNumber}}", ChiveGenMain.versionString);
   }
 
   public static String buildDefaultHomePage() {
