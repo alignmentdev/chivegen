@@ -1,4 +1,4 @@
-HOW TO USE CHIVEGEN (v0.2.12)
+HOW TO USE CHIVEGEN (v0.2.14)
 A work in progress.
   
 INPUT DIRECTORY
