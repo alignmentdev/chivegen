@@ -1,7 +1,7 @@
 # A very small shell script to recompile FicArchiveBuilder with one command
 
 cd bin
-echo "Removing old binaries..."
+echo "Removing any old binaries..."
 rm -f *.class
 cd ../src
 echo "Compiling..."

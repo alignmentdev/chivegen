@@ -12,7 +12,7 @@ CHANGELOG
   - Fics with a date published but no date updated will now use the publication
     date for the date updated field by default (unless the archive is set to
     skip empty fields.)
-  - Version string is now 0.2.14, and lives in ChiveGenmain instead of
+  - Version string is now 0.2.14, and lives in ChiveGenMain instead of
     FicArchiveBuilder.
 
 2024 September 28
