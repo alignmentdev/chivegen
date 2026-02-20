@@ -18,15 +18,19 @@ public class HtmlUtils {
   // <no></no> can be used to tell ChiveGen to ignore a line for formatting
   // regardless of what else it starts with
   private static String[] acceptedOpeningHTMLTags = new String[] {"<br",
-  "<hr", "<h", "</", "<di", "<im", "<li", "<ul", "<ol",
-  "<if", "<bl", "<ta", "<tr", "<td", "<th", "<no"};
+  "<hr", "<h", "</", "<di", "<im", "<au", "<li", "<ul", "<ol",
+  "<if", "<bl", "<ta", "<tr", "<td", "<th", "<no", "<p"};
+  private static String[] acceptedNonClosingHTMLTags = new String[] {"<br>", "<hr>", "<img"};
   // To reduce magic numbers
-  private static final int LONGEST_OPENING_TAG_LENGTH = 3;
+  private static final int LONGEST_OPENING_TAG_LENGTH = 4;
   private static final int SHORTEST_OPENING_TAG_LENGTH = 2;
 
   // Contains all recognized non-paragraph HTML opening tag starts
   private static HashSet<String> nonParagraphHTMLTags =
     new HashSet<String>(Arrays.asList(acceptedOpeningHTMLTags));
+  // Ditto for tags that don't have a closing tag
+  private static HashSet<String> nonClosingHTMLTags =
+    new HashSet<String>(Arrays.asList(acceptedNonClosingHTMLTags));
 
 
   // Wraps each line of a string in HTML paragraph tags, unless it appears to
@@ -40,40 +44,80 @@ public class HtmlUtils {
     StringBuilder formatted = new StringBuilder();
     Scanner lineReader = new Scanner(text);
     String current;
-    String currentClean;
+    String currentClean; // whitespace-trimmed version of line
     boolean inParagraph = false;
+    String currentEndTag = ""; // what end tag to check for, if any (e.g. </p>, </div>...)
+    boolean noFormat = false; // true inside a block that shouldn't auto-format
+    // only start doing additional <br>s outside of paragraphs if 2+ blanks
+    boolean prevLineEmpty = false;
     while (lineReader.hasNextLine()) {
       current = lineReader.nextLine();
-      currentClean = current.trim();
-      // If this is clearly not part of a paragraph, just append as-is
-      if (detectNonParagraphHtmlTags(currentClean)) {
-        //System.out.println("Non-paragraph content: " + current);
-        formatted.append("\n" + current);
-      } else if (inParagraph) {
-        //System.out.println("Paragraph content: " + current);
-        // If we're already in a paragraph, break lines with <br> unless we
-        // reach an entirely blank line, in which case the paragraph ends.
-        if (currentClean.equals("")) {
-          formatted.append("</p>");
+      currentClean = current.trim(); // ignore whitespace
+      //System.out.println("CURRENT LINE\t" + current);
+      if (inParagraph) {/*
+        if (currentClean.toLowerCase.endsWith("</p>")) { // if we already end with </p>
+          formatted.append("\n\n");
+          //System.out.println("</p> detected, ending paragraph...");
           inParagraph = false;
-        } else if (paragraphEnds(currentClean)) {
+        } else */
+        if (currentClean.equals("")) {
+          // If we find an empty line, we have reached the end of the
+          // paragraph, so put </p>
+          formatted.append("</p>\n\n");
+          //System.out.println("\\n\\n detected, ending paragraph...");
           inParagraph = false;
         } else {
-          formatted.append("\n<br>" + current);
+          // If the current line has content, but the paragraph is ongoing
+          // we must have found a single line break inside the paragraph
+          formatted.append("\n<br/>\n");
+          //System.out.println("single \\n detected, inserting newline inside paragraph...");
+          formatted.append(current);
         }
-      } else if (!currentClean.equals("")) {
-        // If we have content on this line, we are entering a new paragraph.
-        //System.out.println("Paragraph ENTERED, line 1: " + current);
-        formatted.append("\n<p>" + current);
-        // If this paragraph doesn't end itself with a </p> tag, mark that we
-        // are scanning inside a paragraph right now
-        if (!paragraphEnds(currentClean)) {
+      } else { // not currently in a paragraph
+        // If we are entering a non-paragraph block (e.g. <div>, <table>, <h1>...)
+        // or a newline
+        currentClean = current.trim().toLowerCase(); // for ease of comparisons
+        if (noFormat || currentClean.equals("") 
+            || startsWithTag(currentClean, nonParagraphHTMLTags)) { // non-paragraph content
+          // Outside a paragraph, ignore single newlines and only start counting
+          // if there are at least two of them (so we don't get extraneous
+          // newlines being inserted constantly between elements)
+          if (currentClean.equals("")) {
+            if (prevLineEmpty) {
+              formatted.append("\n<br>");
+              //System.out.println("2 or more \\n detected outside of paragraphs, adding newline...");
+            } else {
+              prevLineEmpty = true;
+            }
+          } else {
+            prevLineEmpty = false;
+            // If we aren't already inside a non-autoformatted block, check for an opening
+            // tag, but only if it's a tag that actually closes.
+            if (!noFormat && !startsWithTag(currentClean, nonClosingHTMLTags)) {
+              // Keep track of our opening tag so we know when it gets closed
+              // and don't start formatting before that
+              // (this should give </ + tag> -> </tag>)
+              currentEndTag = "</" + currentClean.substring(1, currentClean.indexOf('>') + 1);
+              // In case we have a tag with attributes, e.g. <div class="">
+              if (currentEndTag.indexOf(' ') != -1) {
+                currentEndTag = currentEndTag.substring(0, currentEndTag.indexOf(' ')) + ">";
+              }
+              noFormat = true; // don't check for paragraphs in this block
+              //System.out.println("opening tag detected. no formatting will be applied until we see " + currentEndTag);
+            }
+            // If we find the end tag to whatever HTML block we're currently inside...
+            if (!currentEndTag.equals("") && currentClean.endsWith(currentEndTag)) {
+              noFormat = false;
+              //System.out.println("end tag " + currentEndTag + " detected, ending block...");
+              currentEndTag = "";
+            }
+          }
+          formatted.append(current + "\n");
+        } else { // we have entered a new paragraph
+          formatted.append("<p>" + current);
+          //System.out.println("default: new paragraph");
           inParagraph = true;
         }
-      } else {
-        // Blank line.
-        //System.out.println("Blank line. Adding <br>");
-        formatted.append("\n<br>\n");
       }
     }
     //System.out.println("RESULTS: ");
@@ -87,9 +131,10 @@ public class HtmlUtils {
     return s.length() > 3 && s.substring(s.length() - 4).equals("</p>");
   }
 
-  // Returns true if the string starts with a recognized non-paragraph HTML
-  // opening tag.
-  private static boolean detectNonParagraphHtmlTags(String s) {
+  // Returns true if s starts with a string in matches, or false otherwise.
+  // Used specifically to detect HTML opening tags for HTML parsing, hence usage
+  // of LONGEST_OPENING_TAG_LENGTH, SHORTEST_OPENING_TAG_LENGTH optimizations.
+  private static boolean startsWithTag(String s, HashSet<String> matches) {
     if (s.equals("")) {
       return false;
     }
@@ -102,14 +147,13 @@ public class HtmlUtils {
         // only get the substring if it's longer than our max tag length
         comparisonSubstring = comparisonSubstring.substring(0, LONGEST_OPENING_TAG_LENGTH);
       }
-      //System.out.println("Is this a tag we know?: " + comparisonSubstring);
       // Check progressively shorter versions of the string against the set
       // of non-paragraph HTML tags
       int j = comparisonSubstring.length();
       for (int i = j; i >= SHORTEST_OPENING_TAG_LENGTH; i--) {
         comparisonSubstring = comparisonSubstring.substring(0, i);
-        //System.out.println("Is this a tag we know?: " + comparisonSubstring);
-        if (nonParagraphHTMLTags.contains(comparisonSubstring)) {
+        if (matches.contains(comparisonSubstring)) {
+          //System.out.println("opening tag " + comparisonSubstring + " matched");
           return true;
         }
       }
@@ -204,18 +248,4 @@ public class HtmlUtils {
     return s;
   }
 
-  // Counts and returns how many tabs a string begins with.
-  // DEPRECATED, as nothing seems to use this.
-  public static int countLeftTabs(String text) {
-    if (text.length() == 0) {
-      return 0;
-    }
-    char s = text.charAt(0);
-    int tabs = 0;
-    while (s == '\t') {
-      tabs++;
-      s = text.charAt(tabs);
-    }
-    return tabs;
-  }
 }
