@@ -3,10 +3,14 @@
 # This is just a simple shell script to run ChiveGenMain (chivegen)
 # with the given set of arguments.
 
-if [ $# -lt 4 ]; then
+if [[ $# < 4 && $# != 1 ]]; then
 	# If we don't have enough arguments to run, just give usage and quit.
 	echo "USAGE: $0 -i INPUT_DIR -o OUTPUT_DIR [additional options]"
 	echo "Try '$0 --help' for more information."
+elif [[ $# == 1 ]]; then
+  cd "./bin"
+  java "ChiveGenMain" $1
+  cd ..
 else
 	# Go through our arguments and convert input and output directories to
 	# absolute paths.
