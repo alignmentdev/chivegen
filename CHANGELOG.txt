@@ -1,5 +1,13 @@
 CHANGELOG
 
+2026 February 20
+  - Wow, it's been a while.
+  - Fixed a new(?) bug in the chivegen shell script which caused it to reject
+    commands like --man and --help... while telling you to try --help for help.
+  - Rewrote the HTML parser/converter again, because it was still broken, oops.
+    This version benefits from much better and more thorough testing, as well as
+    better defined behavior when handling text already formatted with HTML.
+
 2024 September 29
   - Apparently the improved shell script and folder behavior actually broke
     everything, somehow? (Wouldn't generate because it failed to recognize the

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # A very small shell script to recompile FicArchiveBuilder with one command
 
 cd bin
