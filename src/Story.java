@@ -447,6 +447,7 @@ public class Story {
   ***/
 
   // Reads through all chapter files to get a total story wordcount.
+  // Returns the wordcount of this story.
   public int countWords() {
     if (FicArchiveBuilder.isVerbose()) {
       System.out.println("Getting wordcount manually for story " + storyTitle + " using files: " + Arrays.toString(chapters));

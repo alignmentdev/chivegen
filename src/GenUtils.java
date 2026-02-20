@@ -7,14 +7,14 @@ import java.util.*;
 
 public class GenUtils {
 
-    // Accepts a string array and returns a HashSet of those values.
-    public static HashSet<String> hashSetFromArray(String[] values) {
-        HashSet<String> set = new HashSet<String>();
-        for (int i = 0; i < values.length; i++) {
-            set.add(values[i]);
-        }
-        return set;
+  // Accepts a string array and returns a HashSet of those values.
+  public static HashSet<String> hashSetFromArray(String[] values) {
+    HashSet<String> set = new HashSet<String>();
+    for (int i = 0; i < values.length; i++) {
+      set.add(values[i]);
     }
+    return set;
+  }
 
   // Accepts a single String array, and returns a HashMap of the Strings
   // mapped with their original indices in the array as values.

@@ -76,6 +76,7 @@ public class FicArchiveBuilder {
                   "Navigation", "ListingTitle", "CurrentlyShowing", "Listings",
                   "Pagination", "L", "C"};
 
+  private static String[] trueFalseKeywords = new String[] {"true", "false"};
 
   /***
     The template objects used to build pages, fields, etc
@@ -113,7 +114,7 @@ public class FicArchiveBuilder {
 
 
   /***
-    Strings for various bits and bobs used to create the site.
+    Default strings for various bits and bobs used to create the site.
   ***/
   // Used when building chapter pages
   private static String nextChapterButton = "Next Chapter";
@@ -271,6 +272,7 @@ public class FicArchiveBuilder {
 
   // EXPERIMENTAL - URL divider between name and page # for paginated
   // archive categories.
+  // Should be currently unused.
   // Defaults to '/', creating subfolders for pages of a category, but could
   // be changed to allow for easier non-recursive page uploading.
   private static String paginationDivider = "/";
@@ -286,7 +288,7 @@ public class FicArchiveBuilder {
   // Variables for main to decide if certain things should actually be executed.
   private static boolean readyToBuild = true; // true if we're ready to build the site, false otherwise
   private static boolean useConfigFile = true; // true if config is detected and not disabled
-  private static boolean building = true; // false if the command is something else like --man or --license
+  private static boolean building = true; // true if the command is to build an archive; false if the command is something else like --man or --license
   private static boolean archiveHasFandoms = false; // true only if at least one story has a fandom in the metadata
   private static boolean archiveHasAuthors = false; // true only if at least one story has an author in the metadata
   private static boolean archiveHasTags = false; // true only if at least one story has tags
@@ -351,6 +353,9 @@ public class FicArchiveBuilder {
       Scanner labelReader = new Scanner(labelsFile);
       // Used when building chapter pages
       try {
+        // TODO this could be made simpler and more flexible
+        // probably by putting all of these into some kind of array
+        // with a simple for loop
         nextPageLabel = labelReader.nextLine();
         prevPageLabel = labelReader.nextLine();
         nextChapterButton = labelReader.nextLine();
@@ -572,7 +577,8 @@ public class FicArchiveBuilder {
         + "unless contradicted by command line arguments.");
       //read config file
       // for each line: use a hashset to check that the label is valid,
-      // then switch statement using 1st char and disambig from there
+      // then use the first character(s) to identify which one it is
+      // (since we have a predefined list of things it can be)
       try {
         Scanner configReader = new Scanner(siteConfigFile);
         int i = 0; // to track current line number
@@ -651,23 +657,23 @@ public class FicArchiveBuilder {
                     else if (currentLineData[0].charAt(4) == 'p') {
                       String[] pagesToSkip = currentLineData[1].split(",");
                       for (String s : pagesToSkip) {
-				                s = s.toLowerCase();
-				                if (s.equals("all")) {
-				                  skipWorkIndices = true;
-				                } else if (s.equals("author")) {
-				                  skipAuthorIndex = true;
-				                } else if (s.equals("home")) {
-				                  skipHomepage = true;
-				                } else if (s.equals("fandom")) {
-				                  skipFandomIndex = true;
-				                } else if (s.equals("latest")) {
-				                  skipLatestIndex = true;
-				                } else if (s.equals("tags")) {
-				                  skipTagPages = true;
-				                } else if (s.equals("title")) {
-				                  skipTitleIndex = true;
-				                }
-				              }
+                        s = s.toLowerCase();
+                        if (s.equals("all")) {
+                          skipWorkIndices = true;
+                        } else if (s.equals("author")) {
+                          skipAuthorIndex = true;
+                        } else if (s.equals("home")) {
+                          skipHomepage = true;
+                        } else if (s.equals("fandom")) {
+                          skipFandomIndex = true;
+                        } else if (s.equals("latest")) {
+                          skipLatestIndex = true;
+                        } else if (s.equals("tags")) {
+                          skipTagPages = true;
+                        } else if (s.equals("title")) {
+                          skipTitleIndex = true;
+                        }
+                      }
                     }
                   }
                   // st...
@@ -690,8 +696,8 @@ public class FicArchiveBuilder {
               if (currentLineData[0].length() > 0 && currentLineData[0].charAt(0) == '#') {
                 continue; // treat lines starting in '#' as commented out
               }
-              System.out.println("Error: malformed or unrecognized setting name on line " + i +
-              "of config.txt: '" + currentLineData[0] + "'.");
+              System.out.println("Error: malformed or unrecognized setting name on line " 
+                                  + i + "of config.txt: '" + currentLineData[0] + "'.");
             }
           }
         }

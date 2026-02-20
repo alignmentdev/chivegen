@@ -126,9 +126,12 @@ public class ChiveGenMain {
   // Parses the directory input and output arguments, as well as a general page
   // template path if one is given, and global parameters such as verbosity
   // (--brief, --verbose, etc) and --no-config.
+  // Parameters:
+  //    - args: the array of string arguments passed as from main
+  //    - opts: return parameter for the list of additional arguments which will
+  //            be passed to our FicArchiveBuilder (e.g. --casual-html)
   // Returns true if the given set of directory arguments is valid for running
   // the program, or false otherwise.
-  // Returns the list of additional arguments via the opts ArrayList.
   public static boolean parseFolderArgs(String[] args, ArrayList<String> opts) {
     // Print a warning if there are no arguments given
     if (args.length == 0) {
