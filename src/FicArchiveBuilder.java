@@ -161,10 +161,10 @@ public class FicArchiveBuilder {
   // an arbitrary page to the index
   private static String sitePath = "/";
   // Possible future feature - URL customization for category folders
-  private static String storyDirectoryName = "stories";
-  private static String fandomDirectoryName = "fandom";
+  private static String fandomDirectoryName = "category";
   private static String authorDirectoryName = "author";
-  private static String tagsDirectoryname = "tag";
+  private static String storyDirectoryName = "stories"; // unused
+  private static String tagsDirectoryname = "tag"; // unused
 
   /***
     Default templates for other page elements. These are overridden if an
@@ -277,14 +277,6 @@ public class FicArchiveBuilder {
   // be changed to allow for easier non-recursive page uploading.
   private static String paginationDivider = "/";
 
-  /***
-     VERBOSITY - under overhaul/refactor. Current/old settings as follows.
-  ***/
-  // Show extra print statements for various functions
-  private static boolean verbose = false;
-  // Skip some print statements that print by default
-  private static boolean brief = false;
-
   // Variables for main to decide if certain things should actually be executed.
   private static boolean readyToBuild = true; // true if we're ready to build the site, false otherwise
   private static boolean useConfigFile = true; // true if config is detected and not disabled
@@ -293,19 +285,28 @@ public class FicArchiveBuilder {
   private static boolean archiveHasAuthors = false; // true only if at least one story has an author in the metadata
   private static boolean archiveHasTags = false; // true only if at least one story has tags
 
+  /***
+     VERBOSITY - under overhaul/refactor, but we are still using the old flags
+                 in this file for now. This setting is equivalent to 'NORMAL'.
+  ***/
+  // Show extra print statements for various functions
+  private static boolean verbose = false;
+  // Skip some print statements that print by default
+  private static boolean brief = false;
 
   /*** PRE-BUILD CONFIGURATION FUNCTIONS ***/
 
-  // Sets the input, output, and template paths.
+  // Sets the input, output, and template paths for the archive.
   public static void setFilePaths(File in, File out, File template) {
     input = in;
     output = out;
     templateFile = template;
   }
 
-  // Temporary function to set verbosity from ChiveGenMain. Will be replaced
-  // along with all current use of 'verbose' and 'brief' once verbosity overhaul
-  // is complete.
+  // Temporary function to translate the new verbosity system from ChiveGenMain
+  // into the legacy version that exists in this class.
+  // This should be removed once verbosity overhaul is complete (i.e. when all
+  // usage of verbose and brief has been replaced.)
   public static void setVerbosity(Verbosity v) {
     if (v.ordinal() <= ChiveGenMain.BRIEF) {
       brief = true;
@@ -317,8 +318,8 @@ public class FicArchiveBuilder {
   }
 
   // Checks in the input folder for any custom label files (field labels,
-  // ratings, completion codes, etc.), reads in the files and sets them in
-  // the global archive settings.
+  // ratings, completion codes, etc.), reads the files and sets the global
+  // archive settings appropriately.
   public static void getCustomLabels() {
     // Check for files with labels, ratings, etc, and use them to
     // override defaults if so.
@@ -329,6 +330,7 @@ public class FicArchiveBuilder {
       }
       setFieldLabels(fieldLabels);
     }
+    // Custom ratings (i.e. G/T/M/E, K/K+/T/M/NC-17, etc)
     File customRatings = new File(input, "ratings.txt");
     if (customRatings.exists()) {
       if (verbose) {
@@ -336,6 +338,7 @@ public class FicArchiveBuilder {
       }
       setRatings(customRatings);
     }
+    // Custom text for marking story as complete/incomplete
     File customCompletionCodes = new File(input, "completion.txt");
     if (customCompletionCodes.exists()) {
       if (verbose) {
@@ -870,7 +873,7 @@ public class FicArchiveBuilder {
       else if (args[i].equals("--skip-author-index")) {
         skipAuthorIndex = true;
       }
-      else if (args[i].equals("--skip-fandom-index")) {
+      else if (args[i].equals("--skip-category-index")) {
         skipFandomIndex = true;
       }
       else if (args[i].equals("--skip-title-index")) {
@@ -1033,44 +1036,43 @@ public class FicArchiveBuilder {
             new File(allByLatestFolder + paginationDivider + (i+1) + ".html"));
           }
         }
-        // Create fandom index if we have at least one fandom
+        // Create index of all categories/fandoms if we have at least one
         if (!skipFandomIndex) {
           // Generate fandom index page
           currentIndex =
-            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveFandomMap, "fandoms", "Fandoms"));
+            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveFandomMap, fandomDirectoryName, HtmlUtils.toTitleCase(fandomDirectoryName) + " Index"));
           // BUILD INDEX PAGE
           buildPage(buildStandardPageString(currentIndex,
-                                            buildPageTitle("By Fandom")),
-                    new File(output, "by_fandom.html"));
+                                            buildPageTitle("By " + HtmlUtils.toTitleCase(fandomDirectoryName))),
+                    new File(output, "by_" + fandomDirectoryName + ".html"));
           if (verbose) {
-            System.out.println("Fandom index page created.");
+            System.out.println("Fandom/category index page created.");
           }
           /***
           ChiveGenMain.printStatus("Fandom index page created.",
                                    Verbosity.VERBOSE);
                                    ***/
-          // Build fandoms pages
-          File fandomFolder = new File(output, "fandoms");
+          // Build individual category/fandom pages
+          File fandomFolder = new File(output, fandomDirectoryName);
           if (!fandomFolder.exists()) {
             fandomFolder.mkdirs();
           }
-          System.out.println("Generating fandom pages...");
+          System.out.println("Generating category/fandom pages...");
           //ChiveGenMain.printStatus("Generating fandom pages...",
           //                         Verbosity.SILENT);
-          buildArchiveCategory(archiveFandomMap, fandomFolder, "Fandoms",
+          buildArchiveCategory(archiveFandomMap, fandomFolder, /*"Fandoms",*/
                                "Stories in ");
         }
-        // Create authors index if we have at least one author
+        // Create index of all authors if we have at least one author
         if (!skipAuthorIndex && archiveHasAuthors) {
           // Generate index page
-          currentIndex =
-            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveAuthorMap,
-                                                                       "authors",
-                                                                       "Authors"));
+          currentIndex = 
+            workIndexContentTemplate.assemble(buildAlphabeticalIndexOf(archiveAuthorMap, 
+              authorDirectoryName, HtmlUtils.toTitleCase(authorDirectoryName) + " Index"));
           // BUILD INDEX PAGE
           buildPage(buildStandardPageString(currentIndex,
-                                            buildPageTitle("By Author")),
-                    new File(output, "by_author.html"));
+                                            buildPageTitle("By " + HtmlUtils.toTitleCase(authorDirectoryName))),
+                    new File(output, "by_" + authorDirectoryName + ".html"));
           if (verbose) {
             System.out.println("Author index page created.");
           }
@@ -1078,24 +1080,26 @@ public class FicArchiveBuilder {
           ChiveGenMain.printStatus("Author index page created.",
                                    Verbosity.VERBOSE);
                                    ***/
-          // Build authors pages
-          File authorFolder = new File(output, "authors");
+          // Build individual author pages
+          File authorFolder = new File(output, authorDirectoryName);
           if (!authorFolder.exists()) {
             authorFolder.mkdirs();
           }
           System.out.println("Generating author pages...");
           //ChiveGenMain.printStatus("Generating author pages...",
           //                         Verbosity.SILENT);
-          buildArchiveCategory(archiveAuthorMap, authorFolder, "Authors",
+          buildArchiveCategory(archiveAuthorMap, authorFolder, /*"Authors",*/
                                "Stories by ");
         }
-        // Create tag pages, if any tags are used.
+        // Create tag pages, if any tags are used. Note that we currently do
+        // not generate an index for all tags (but we could change that in the
+        // future....)
         if (!skipTagPages && archiveHasTags) {
           System.out.println("Generating tag pages...");
           //ChiveGenMain.printStatus("Generating tag pages...",
           //                         Verbosity.SILENT);
           // CREATE TAG FOLDER + PAGES
-          buildArchiveCategory(archiveTagMap, new File(output, "tags"), "Tags",
+          buildArchiveCategory(archiveTagMap, new File(output, "tags"), /*"Tags",*/
                                "Stories tagged ");
         }
         // Create the site homepage.
@@ -1320,8 +1324,8 @@ public class FicArchiveBuilder {
 
   // Build all the pages for a category like tags/fandom/author/etc
   public static void buildArchiveCategory(HashMap<String, ArrayList<Story>> map,
-                                          File categoryFolder,
-                                          String categoryLabel,
+                                          File categoryFolder,/*
+                                          String categoryLabel,*/ // unused??
                                           String titleLabel) {
     // Create the tag folder if it doesn't already exist
     if (!categoryFolder.exists()) {
@@ -1360,7 +1364,7 @@ public class FicArchiveBuilder {
     }
     if (!brief) {
       System.out.println("Created " + map.keySet().size()
-                         + " category folder[s] for " + categoryLabel);
+                         + " category subfolder[s] for /" + categoryFolder.getName() + "/");
     }
   }
 
@@ -1374,7 +1378,7 @@ public class FicArchiveBuilder {
                                             ArrayList<Story> relatedStories,
                                             String categoryLabel,
                                             boolean URLIsSafe) {
-    // If we need a "safe" version of the category name for the URL
+    // If we need a "safe" version of the category name for the URL,
     // convert that now.
     if (!URLIsSafe) {
       category = HtmlUtils.toSafeUrl(category);

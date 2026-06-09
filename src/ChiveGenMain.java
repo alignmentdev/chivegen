@@ -32,20 +32,15 @@ public class ChiveGenMain {
   private static String templatePath = "";
   private static String outputPath = "";
 
-  /***
-  // Show extra print statements for various functions
-  private static boolean verbose = false;
-  // Skip some print statements that print by default
-  private static boolean brief = false;
-  ***/
-
   // VERBOSITY
   // Constants for quickly checking against various verbosity levels
-  public final static int SILENT = Verbosity.SILENT.ordinal();
-  public final static int BRIEF = Verbosity.BRIEF.ordinal();
+  // Note these are not consistently used yet, as the verbosity overhaul
+  // has not been fully implemented.
+  public final static int SILENT = Verbosity.SILENT.ordinal(); // print nothing
+  public final static int BRIEF = Verbosity.BRIEF.ordinal(); // print minimal
   public final static int NORMAL = Verbosity.NORMAL.ordinal();
-  public final static int VERBOSE = Verbosity.VERBOSE.ordinal();
-  public final static int DEBUG = Verbosity.DEBUG.ordinal();
+  public final static int VERBOSE = Verbosity.VERBOSE.ordinal(); // print lots
+  public final static int DEBUG = Verbosity.DEBUG.ordinal(); // print LOTS
 
   private static Verbosity verbosity = Verbosity.NORMAL;
 
@@ -260,7 +255,6 @@ public class ChiveGenMain {
       }
     }
     // If we got through all that...
-
     return true;
   }
 
@@ -275,6 +269,8 @@ public class ChiveGenMain {
   }
 
   // Prints the manual.
+  // TODO: double check that everything in here is a) still implemented, and b)
+  // works the way this says it works.
   private static void printManual() {
     System.out.println("\nCHIVEGEN ALPHA: FANFIC ARCHIVE BUILDER "
                + versionString);
@@ -316,8 +312,8 @@ public class ChiveGenMain {
     System.out.println("-sk, --skip-index\tDon't create any index pages.");
     System.out.println("--skip-title-index\tDon't create an index page for "
                + "stories by title.");
-    System.out.println("--skip-fandom-index\tDon't create index pages for "
-               + "fandoms.");
+    System.out.println("--skip-category-index\tDon't create index pages for "
+               + "categories.");
     System.out.println("--skip-author-index\tDon't create index pages for "
                + "authors.");
     System.out.println("-st, --skip-tags\tDon't generate tag index pages or"
@@ -373,6 +369,7 @@ public class ChiveGenMain {
   // Prints a given string with println, but ONLY if the provided Verbosity
   // value is less than or equal to the current verbosity level.
   // Returns true if output would have been printed, or false otherwise.
+  // This will (probably) be used when we finally do the verbosity overhaul.
   public static boolean printStatus(String s, Verbosity v) {
     if (v.ordinal() <= verbosity.ordinal()) {
       System.out.println(s);
