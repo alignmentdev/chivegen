@@ -20,17 +20,17 @@ public class HtmlUtils {
   private static String[] acceptedOpeningHTMLTags = new String[] {"<br",
   "<hr", "<h", "</", "<di", "<im", "<au", "<li", "<ul", "<ol",
   "<if", "<bl", "<ta", "<tr", "<td", "<th", "<no", "<p"};
-  private static String[] acceptedNonClosingHTMLTags = new String[] {"<br>", "<hr>", "<img"};
+  private static String[] acceptednonClosingHtmlTags = new String[] {"<br>", "<hr>", "<img"};
   // To reduce magic numbers
   private static final int LONGEST_OPENING_TAG_LENGTH = 4;
   private static final int SHORTEST_OPENING_TAG_LENGTH = 2;
 
   // Contains all recognized non-paragraph HTML opening tag starts
-  private static HashSet<String> nonParagraphHTMLTags =
+  private static HashSet<String> acceptedHtmlTagSet =
     new HashSet<String>(Arrays.asList(acceptedOpeningHTMLTags));
   // Ditto for tags that don't have a closing tag
-  private static HashSet<String> nonClosingHTMLTags =
-    new HashSet<String>(Arrays.asList(acceptedNonClosingHTMLTags));
+  private static HashSet<String> nonClosingHtmlTagSet =
+    new HashSet<String>(Arrays.asList(acceptednonClosingHtmlTags));
 
 
   // Wraps each line of a string in HTML paragraph tags, unless it appears to
@@ -54,12 +54,8 @@ public class HtmlUtils {
       current = lineReader.nextLine();
       currentClean = current.trim(); // ignore whitespace
       //System.out.println("CURRENT LINE\t" + current);
-      if (inParagraph) {/*
-        if (currentClean.toLowerCase.endsWith("</p>")) { // if we already end with </p>
-          formatted.append("\n\n");
-          //System.out.println("</p> detected, ending paragraph...");
-          inParagraph = false;
-        } else */
+      // If we are entering a preformatted paragraph...
+      if (inParagraph) {
         if (currentClean.equals("")) {
           // If we find an empty line, we have reached the end of the
           // paragraph, so put </p>
@@ -73,27 +69,24 @@ public class HtmlUtils {
           //System.out.println("single \\n detected, inserting newline inside paragraph...");
           formatted.append(current);
         }
-      } else { // not currently in a paragraph
+      } else {
         // If we are entering a non-paragraph block (e.g. <div>, <table>, <h1>...)
         // or a newline
         currentClean = current.trim().toLowerCase(); // for ease of comparisons
         if (noFormat || currentClean.equals("") 
-            || startsWithTag(currentClean, nonParagraphHTMLTags)) { // non-paragraph content
+            || startsWithTag(currentClean, acceptedHtmlTagSet)) { // non-paragraph content
           // Outside a paragraph, ignore single newlines and only start counting
           // if there are at least two of them (so we don't get extraneous
           // newlines being inserted constantly between elements)
           if (currentClean.equals("")) {
-            if (prevLineEmpty) {
-              formatted.append("\n<br>");
-              //System.out.println("2 or more \\n detected outside of paragraphs, adding newline...");
-            } else {
-              prevLineEmpty = true;
+            if (prevLineEmpty) { // 2 newlines in a row
+            	//System.out.println("previous line was empty and current line is empty; adding <br>");
+              formatted.append("<br/>");
             }
           } else {
-            prevLineEmpty = false;
             // If we aren't already inside a non-autoformatted block, check for an opening
             // tag, but only if it's a tag that actually closes.
-            if (!noFormat && !startsWithTag(currentClean, nonClosingHTMLTags)) {
+            if (!noFormat && !startsWithTag(currentClean, nonClosingHtmlTagSet)) {
               // Keep track of our opening tag so we know when it gets closed
               // and don't start formatting before that
               // (this should give </ + tag> -> </tag>)
@@ -119,9 +112,14 @@ public class HtmlUtils {
           inParagraph = true;
         }
       }
+      // Track if the previous line was empty for next round
+      if (currentClean.equals("")) {
+      	prevLineEmpty = true;
+      } else {
+      	prevLineEmpty = false;
+      }
+      //System.out.println();
     }
-    //System.out.println("RESULTS: ");
-    //System.out.println(formatted.toString());
     lineReader.close();
     return formatted.toString();
   }

@@ -1,5 +1,22 @@
 CHANGELOG
 
+2026 July 17
+	- Working on getting tests actually working. We now have a functional test for
+	  the HTMLification process! As opposed to just visual verification. Yeah,
+	  probably should have done that sooner.
+	- ChiveGen now has an actual homepage, with a demo and hopefully at some point
+	  proper user documentation. It's currently hosted at 
+	  https://alignmentdev.github.io/chivegen-site/
+
+2026 June 9
+	- Began implementing the ability to use custom strings for URL parts like
+	  /author/ and /fandom/ -- which, speaking of, the default for fandom is now
+	  /category/, to be a little more content-neutral. The URLs for certain pages
+	  like by_fandom and by_author have been changed accordingly, and various
+	  strings updated to match this behavior. "Fandoms" and "Authors" page titles
+	  are now "Category Index" and "Author Index" to avoid awkward pluralization
+	  issues.
+
 2026 February 20
   - Wow, it's been a while.
   - Fixed a new(?) bug in the chivegen shell script which caused it to reject

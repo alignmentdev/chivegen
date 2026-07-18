@@ -1,6 +1,8 @@
 # ChiveGen
 
-A static site generator for online fiction archives. Check out docs_beta.txt for more info.
+[https://alignmentdev.github.io/chivegen-site/](https://alignmentdev.github.io/chivegen-site/)
+
+A static site generator for online fiction archives. Check out DOCS_BETA.txt for more info.
 
 ## Setup
 
