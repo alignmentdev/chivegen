@@ -6,8 +6,10 @@ A static site generator for online fiction archives. Check out DOCS_BETA.txt for
 
 ## Setup
 
-To compile ChiveGen, compile the source files with `javac ChiveGenMain.java`, with the output destination as wherever you want your compiled java files to go. (Ideally, this should be a folder `bin` in the root of the repo directory.)
+You can compile ChiveGen in two ways: either compile directly in the `src` directory with `javac ChiveGenMain.java`, or run the script `build.sh` from the root of the ChiveGen repository.
 
-The included `build.sh` script assumes the existence of a folder called `bin` in the same directory as `src`. If you do not want your binaries to go there, **do not use it**. It will delete any .class files already in `./bin`, and output new ChiveGen binaries there!
+The included `build.sh` script will output binaries to `./bin`, and if it doesn't find this folder, it will make one. If you do not want your binaries to go there, **do not use it**. It will delete any .class files already in `./bin`, and output new ChiveGen binaries there!
 
-To run ChiveGen, run `./chivegen [args]` in the root folder of the repository. Like with `build.sh`, it assumes your binaries will live in a `./bin` directory relative to it, so if you don't do that, you _will_ need to change it to look in a different directory.
+## Usage
+
+To run ChiveGen, run `./chivegen [args]` in the root folder of the repository. Like with `build.sh`, it assumes your binaries will live in a `./bin` directory relative to it. To have it look elsewhere you _will_ need to manually change the `chivegen` script to look in a different directory.
