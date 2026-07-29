@@ -4,6 +4,8 @@
 
 A static site generator for online fiction archives. Check out DOCS_BETA.txt for more info.
 
+You can also see a demo archive here: [https://alignmentdev.github.io/chivegen-site/demo/](https://alignmentdev.github.io/chivegen-site/demo/)
+
 ## Setup
 
 You can compile ChiveGen in two ways: either compile directly in the `src` directory with `javac ChiveGenMain.java`, or run the script `build.sh` from the root of the ChiveGen repository.
